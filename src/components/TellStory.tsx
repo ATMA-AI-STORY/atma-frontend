@@ -1,16 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ArrowRight, PenTool, Mic, Lightbulb } from "lucide-react";
+import { ArrowLeft, ArrowRight, PenTool, Mic, Lightbulb, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 interface TellStoryProps {
   onNext: (story: string) => void;
   onBack: () => void;
+  isLoading?: boolean;
+  initialStory?: string;
 }
 
-export default function TellStory({ onNext, onBack }: TellStoryProps) {
-  const [story, setStory] = useState("");
+export default function TellStory({ onNext, onBack, isLoading = false, initialStory = "" }: TellStoryProps) {
+  const [story, setStory] = useState(initialStory);
   const [mode, setMode] = useState<'write' | 'speak'>('write');
 
   const promptSuggestions = [
@@ -24,7 +26,7 @@ export default function TellStory({ onNext, onBack }: TellStoryProps) {
     "Hobbies and passions"
   ];
 
-  const canProceed = story.trim().length > 0;
+  const canProceed = story.trim().length > 0 && !isLoading;
 
   return (
     <div className="min-h-screen bg-gradient-warm p-4 md:p-8">
@@ -164,8 +166,17 @@ export default function TellStory({ onNext, onBack }: TellStoryProps) {
             disabled={!canProceed}
             className="flex items-center gap-2"
           >
-            Continue
-            <ArrowRight className="w-5 h-5" />
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Processing Story...
+              </>
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="w-5 h-5" />
+              </>
+            )}
           </Button>
         </div>
       </div>

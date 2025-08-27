@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Camera, Play } from "lucide-react";
+import { Camera, Play, LogOut, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import heroBackground from "@/assets/hero-background.jpg";
 
 interface WelcomeProps {
@@ -9,6 +10,12 @@ interface WelcomeProps {
 }
 
 export default function Welcome({ onCreateNew, onViewPast }: WelcomeProps) {
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-warm relative overflow-hidden">
       {/* Hero Background */}
@@ -17,8 +24,41 @@ export default function Welcome({ onCreateNew, onViewPast }: WelcomeProps) {
         style={{ backgroundImage: `url(${heroBackground})` }}
       />
       
+      {/* Header with user info and logout */}
+      <header className="relative z-20 flex justify-between items-center p-6">
+        <div className="flex items-center space-x-2">
+          <h2 className="text-2xl font-bold text-foreground">ATMA</h2>
+        </div>
+        
+        {user && (
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2">
+              {user.picture ? (
+                <img 
+                  src={user.picture} 
+                  alt={user.name} 
+                  className="w-8 h-8 rounded-full"
+                />
+              ) : (
+                <User className="w-8 h-8 text-gray-600" />
+              )}
+              <span className="text-sm font-medium text-gray-700">{user.name}</span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleLogout}
+              className="bg-white/90 backdrop-blur-sm"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
+        )}
+      </header>
+      
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-screen">
+      <div className="relative z-10 container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-120px)]">
         <div className="text-center max-w-4xl mx-auto">
           {/* Main Title */}
           <h1 className="text-6xl md:text-7xl font-bold text-foreground mb-6 leading-tight">

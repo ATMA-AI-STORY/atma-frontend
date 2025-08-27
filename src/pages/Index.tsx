@@ -9,6 +9,8 @@ import PreviewVideo from "@/components/PreviewVideo";
 import FinalDelivery from "@/components/FinalDelivery";
 import VideoLibrary from "@/components/VideoLibrary";
 import StepProgress from "@/components/StepProgress";
+import { apiService, type Chapter } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 type Step = 'welcome' | 'upload' | 'story' | 'script' | 'theme' | 'audio' | 'preview' | 'final' | 'library';
 type CreationStep = 'upload' | 'story' | 'script' | 'theme' | 'audio' | 'preview' | 'final';
@@ -17,6 +19,7 @@ interface VideoData {
   images: File[];
   story: string;
   script: string;
+  chapters: Chapter[];
   theme: string;
   audio: {
     music: string;
@@ -28,13 +31,16 @@ interface VideoData {
 const Index = () => {
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
   const [completedSteps, setCompletedSteps] = useState<Set<CreationStep>>(new Set());
+  const [isProcessingStory, setIsProcessingStory] = useState(false);
   const [videoData, setVideoData] = useState<VideoData>({
     images: [],
     story: '',
     script: '',
+    chapters: [],
     theme: '',
     audio: { music: '', voice: '', subtitles: true }
   });
+  const { toast } = useToast();
 
   const handleCreateNew = () => setCurrentStep('upload');
   const handleViewPast = () => setCurrentStep('library');
@@ -61,10 +67,42 @@ const Index = () => {
     setCurrentStep('story');
   };
 
-  const handleStoryNext = (story: string) => {
-    setVideoData(prev => ({ ...prev, story }));
-    markStepCompleted('story');
-    setCurrentStep('script');
+  const handleStoryNext = async (story: string) => {
+    setIsProcessingStory(true);
+    
+    try {
+      // Update story in state immediately
+      setVideoData(prev => ({ ...prev, story }));
+      
+      // Call backend API to parse the story into structured chapters
+      const response = await apiService.parseScript(story);
+      
+      // Update state with structured chapters
+      setVideoData(prev => ({ 
+        ...prev, 
+        chapters: response.chapters,
+        script: response.chapters.map(chapter => chapter.script).join(' ')
+      }));
+      
+      markStepCompleted('story');
+      setCurrentStep('script');
+      
+      toast({
+        title: "Story processed successfully!",
+        description: `Generated ${response.chapters.length} chapters from your story.`,
+      });
+      
+    } catch (error) {
+      console.error('Error processing story:', error);
+      
+      toast({
+        title: "Error processing story",
+        description: error instanceof Error ? error.message : "Failed to process your story. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingStory(false);
+    }
   };
 
   const handleScriptNext = (script: string) => {
@@ -93,7 +131,14 @@ const Index = () => {
   const handleStartOver = () => {
     setCurrentStep('welcome');
     setCompletedSteps(new Set());
-    setVideoData({ images: [], story: '', script: '', theme: '', audio: { music: '', voice: '', subtitles: true } });
+    setVideoData({ 
+      images: [], 
+      story: '', 
+      script: '', 
+      chapters: [],
+      theme: '', 
+      audio: { music: '', voice: '', subtitles: true } 
+    });
   };
 
   // Render current step
@@ -118,9 +163,9 @@ const Index = () => {
             case 'upload':
               return <UploadPhotos onNext={handleUploadNext} onBack={handleBack} />;
             case 'story':
-              return <TellStory onNext={handleStoryNext} onBack={handleBack} />;
+              return <TellStory onNext={handleStoryNext} onBack={handleBack} isLoading={isProcessingStory} initialStory={videoData.story} />;
             case 'script':
-              return <ApproveScript story={videoData.story} onNext={handleScriptNext} onBack={handleBack} />;
+              return <ApproveScript chapters={videoData.chapters} onNext={handleScriptNext} onBack={handleBack} />;
             case 'theme':
               return <ChooseTheme onNext={handleThemeNext} onBack={handleBack} />;
             case 'audio':

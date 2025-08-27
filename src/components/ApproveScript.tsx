@@ -2,40 +2,33 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight, Edit3, Plus, Check } from "lucide-react";
 import { useState } from "react";
+import type { Chapter } from "@/lib/api";
 
 interface ApproveScriptProps {
-  story: string;
+  chapters: Chapter[];
   onNext: (script: string) => void;
   onBack: () => void;
 }
 
-export default function ApproveScript({ story, onNext, onBack }: ApproveScriptProps) {
-  // Auto-generate a structured script from the user's story
-  const [script] = useState(() => {
-    const sections = [
+export default function ApproveScript({ chapters, onNext, onBack }: ApproveScriptProps) {
+  // Use chapters from props, with fallback to empty array
+  const [script, setScript] = useState<Chapter[]>(() => {
+    // If chapters are provided, use them; otherwise create default structure
+    if (chapters && chapters.length > 0) {
+      return chapters;
+    }
+    
+    // Fallback structure if no chapters provided
+    return [
       {
-        title: "Early Life",
-        content: "Born in 1975 in Lucknow, India, my journey began in a vibrant city filled with culture and warmth. These early years shaped who I would become, surrounded by family and the rich traditions of my homeland."
+        title: "Chapter 1: Early Life",
+        script: "This chapter will be generated from your story..."
       },
       {
-        title: "Education & Growth", 
-        content: "In 1997, I graduated with an engineering degree, marking the completion of years of hard work and dedication. This achievement opened doors to new possibilities and set the foundation for my professional journey."
-      },
-      {
-        title: "Love & Partnership",
-        content: "In 2001, I married my college sweetheart, beginning a beautiful partnership that would carry me through life's adventures. Together, we built dreams and supported each other through every milestone."
-      },
-      {
-        title: "New Beginnings",
-        content: "2005 brought a major change when we moved to Canada, seeking new opportunities and adventures. This move required courage and faith, but it opened up a world of possibilities for our growing family."
-      },
-      {
-        title: "Building Dreams",
-        content: "By 2010, I had started my own business, turning years of experience into entrepreneurial success. This venture represented not just professional growth, but the realization of long-held dreams."
+        title: "Chapter 2: Growing Up", 
+        script: "This chapter will explore your formative experiences..."
       }
     ];
-    
-    return sections;
   });
 
   const [editingSection, setEditingSection] = useState<number | null>(null);
@@ -59,7 +52,7 @@ export default function ApproveScript({ story, onNext, onBack }: ApproveScriptPr
             <Card key={index} className="p-6 bg-white/95 backdrop-blur-sm border-0 shadow-card">
               <div className="flex items-start justify-between mb-4">
                 <h3 className="text-xl font-semibold text-foreground">
-                  Chapter {index + 1}: {section.title}
+                  {section.title}
                 </h3>
                 <Button
                   variant="ghost"
@@ -76,7 +69,12 @@ export default function ApproveScript({ story, onNext, onBack }: ApproveScriptPr
                 <div className="space-y-4">
                   <textarea
                     className="w-full p-4 border border-border rounded-lg resize-none min-h-[120px] text-base leading-relaxed"
-                    defaultValue={section.content}
+                    defaultValue={section.script}
+                    onChange={(e) => {
+                      const newScript = [...script];
+                      newScript[index] = { ...newScript[index], script: e.target.value };
+                      setScript(newScript);
+                    }}
                   />
                   <div className="flex gap-2">
                     <Button 
@@ -98,7 +96,7 @@ export default function ApproveScript({ story, onNext, onBack }: ApproveScriptPr
                 </div>
               ) : (
                 <p className="text-foreground leading-relaxed text-lg">
-                  {section.content}
+                  {section.script}
                 </p>
               )}
             </Card>
@@ -107,7 +105,18 @@ export default function ApproveScript({ story, onNext, onBack }: ApproveScriptPr
           {/* Add New Section */}
           <Card className="p-6 bg-white/90 backdrop-blur-sm border-0 shadow-soft border-dashed border-primary/30">
             <div className="text-center">
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={() => {
+                  const newChapter: Chapter = {
+                    title: `Chapter ${script.length + 1}: New Chapter`,
+                    script: "Add your chapter content here..."
+                  };
+                  setScript([...script, newChapter]);
+                  setEditingSection(script.length);
+                }}
+              >
                 <Plus className="w-4 h-4" />
                 Add New Chapter
               </Button>
@@ -140,7 +149,7 @@ export default function ApproveScript({ story, onNext, onBack }: ApproveScriptPr
           <Button 
             variant="hero" 
             size="lg" 
-            onClick={() => onNext(script.map(s => s.content).join(' '))}
+            onClick={() => onNext(script.map(s => s.script).join(' '))}
             className="flex items-center gap-2"
           >
             Approve Script
