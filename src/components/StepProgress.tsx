@@ -89,7 +89,7 @@ export default function StepProgress({ currentStep, completedSteps, onStepClick 
                 <div className="text-center min-w-0">
                   <div
                     className={cn(
-                      "md:hidden lg:block text-xs font-medium transition-colors duration-300 truncate",
+                      "hidden md:block text-xs font-medium transition-colors duration-300 truncate",
                       isCompleted
                         ? "text-primary"
                         : isCurrent
@@ -99,7 +99,7 @@ export default function StepProgress({ currentStep, completedSteps, onStepClick 
                   >
                     {step.name}
                   </div>
-                  <div className="md:hidden lg:block text-xs text-muted-foreground">
+                  <div className="hidden md:block text-xs text-muted-foreground">
                     {index + 1}
                   </div>
                 </div>
