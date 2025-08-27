@@ -20,19 +20,30 @@ export interface ApiError {
 }
 
 class ApiService {
-  private baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8000/api/v1' : '/api/v1';
+  private baseUrl: string;
+
+  constructor() {
+    // Use environment variable for backend URL, fallback to localhost for development
+    this.baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+  }
 
   /**
    * Parse raw story text into structured chapters (requires authentication)
    */
   async parseScript(rawScript: string): Promise<ScriptParseResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/script/parse/`, {
+      const token = localStorage.getItem('access_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${this.baseUrl}/api/v1/script/parse/`, {
         method: 'POST',
-        credentials: 'include', // Include httpOnly cookies for auth
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           raw_script: rawScript,
         } as ScriptParseRequest),
