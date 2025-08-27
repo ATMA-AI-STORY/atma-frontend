@@ -89,7 +89,7 @@ export default function StepProgress({ currentStep, completedSteps, onStepClick 
                 <div className="text-center min-w-0">
                   <div
                     className={cn(
-                      "text-xs font-medium transition-colors duration-300 truncate",
+                      "md:hidden lg:block text-xs font-medium transition-colors duration-300 truncate",
                       isCompleted
                         ? "text-primary"
                         : isCurrent
@@ -99,12 +99,12 @@ export default function StepProgress({ currentStep, completedSteps, onStepClick 
                   >
                     {step.name}
                   </div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="md:hidden lg:block text-xs text-muted-foreground">
                     {index + 1}
                   </div>
                 </div>
 
-                {/* Connector Line */}
+                {/* Connector Line
                 {index < stepConfig.length - 1 && (
                   <div
                     className={cn(
@@ -118,7 +118,8 @@ export default function StepProgress({ currentStep, completedSteps, onStepClick 
                       width: `calc(${(1 / stepConfig.length) * 100}% - 2rem)`,
                     }}
                   />
-                )}
+                )} */}
+
               </button>
             );
           })}
