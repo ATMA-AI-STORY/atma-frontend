@@ -36,51 +36,70 @@ class AuthService {
   async getCurrentUser(): Promise<User | null> {
     try {
       const token = localStorage.getItem('access_token');
-      console.log('Getting current user, token exists:', !!token);
+      console.log('🔍 getCurrentUser: Token exists:', !!token);
+      console.log('🔍 getCurrentUser: Token preview:', token ? `${token.substring(0, 20)}...` : 'null');
       
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      
-      // Add Authorization header if token exists
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      if (!token) {
+        console.log('❌ getCurrentUser: No token found');
+        return null;
       }
 
-      console.log('Making request to:', `${this.baseUrl}/api/v1/auth/me`);
-      const response = await fetch(`${this.baseUrl}/api/v1/auth/me`, {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      };
+
+      const url = `${this.baseUrl}/api/v1/auth/me`;
+      console.log('🌐 getCurrentUser: Making request to:', url);
+      console.log('📋 getCurrentUser: Headers:', { ...headers, Authorization: 'Bearer [REDACTED]' });
+
+      const response = await fetch(url, {
         method: 'GET',
-        credentials: 'include', // Include httpOnly cookies
+        credentials: 'include',
         headers,
       });
 
-      console.log('Response status:', response.status, response.statusText);
+      console.log('📡 getCurrentUser: Response status:', response.status, response.statusText);
+      console.log('📡 getCurrentUser: Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
-        if (response.status === 401) {
-          console.log('Unauthorized, clearing token');
-          // Clear invalid token
-          localStorage.removeItem('access_token');
-          return null; // Not authenticated
-        }
-        console.error('Failed to get user info:', response.status, response.statusText);
         const errorText = await response.text();
-        console.error('Error response body:', errorText);
-        throw new Error(`Failed to get user info: ${response.statusText}`);
+        console.error('❌ getCurrentUser: HTTP Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+        });
+        
+        if (response.status === 401) {
+          console.log('🔑 getCurrentUser: Unauthorized, clearing token');
+          localStorage.removeItem('access_token');
+          return null;
+        }
+        
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const userData = await response.json();
-      console.log('Received user data:', userData);
+      console.log('✅ getCurrentUser: Received user data:', userData);
       
       // Validate that we have the required fields
-      if (!userData.email || !userData.name || !userData.user_id) {
-        console.error('Invalid user data received:', userData);
-        throw new Error('Invalid user data received from server');
+      const requiredFields = ['email', 'name', 'user_id'];
+      const missingFields = requiredFields.filter(field => !userData[field]);
+      
+      if (missingFields.length > 0) {
+        console.error('❌ getCurrentUser: Missing required fields:', missingFields);
+        console.error('❌ getCurrentUser: Received data:', userData);
+        throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
       }
       
+      console.log('✅ getCurrentUser: User data validated successfully');
       return userData;
     } catch (error) {
-      console.error('Error getting current user:', error);
+      console.error('💥 getCurrentUser: Error occurred:', error);
+      if (error instanceof Error) {
+        console.error('💥 getCurrentUser: Error message:', error.message);
+        console.error('💥 getCurrentUser: Error stack:', error.stack);
+      }
       return null;
     }
   }
