@@ -34,16 +34,26 @@ class AuthService {
    */
   async getCurrentUser(): Promise<User | null> {
     try {
+      const token = localStorage.getItem('access_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add Authorization header if token exists
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${this.baseUrl}/api/v1/auth/me`, {
         method: 'GET',
         credentials: 'include', // Include httpOnly cookies
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
       });
 
       if (!response.ok) {
         if (response.status === 401) {
+          // Clear invalid token
+          localStorage.removeItem('access_token');
           return null; // Not authenticated
         }
         throw new Error(`Failed to get user info: ${response.statusText}`);
@@ -62,23 +72,34 @@ class AuthService {
    */
   async logout(): Promise<void> {
     try {
+      const token = localStorage.getItem('access_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${this.baseUrl}/api/v1/auth/logout`, {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
       });
 
       if (!response.ok) {
         throw new Error(`Logout failed: ${response.statusText}`);
       }
 
+      // Clear token from localStorage
+      localStorage.removeItem('access_token');
+      
       // Redirect to home page after logout
       window.location.href = '/';
     } catch (error) {
       console.error('Error during logout:', error);
-      // Still redirect even if logout request fails
+      // Still clear token and redirect even if logout request fails
+      localStorage.removeItem('access_token');
       window.location.href = '/';
     }
   }

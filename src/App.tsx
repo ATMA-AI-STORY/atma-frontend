@@ -7,6 +7,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./components/LoginPage";
+import AuthCallback from "./components/AuthCallback";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Index />
