@@ -3,10 +3,11 @@
  */
 
 export interface User {
-  id: string;
+  user_id: string;  // Changed from 'id' to match backend
   email: string;
   name: string;
   picture: string;
+  is_active: boolean;  // Added to match backend
 }
 
 export interface AuthState {
@@ -35,6 +36,8 @@ class AuthService {
   async getCurrentUser(): Promise<User | null> {
     try {
       const token = localStorage.getItem('access_token');
+      console.log('Getting current user, token exists:', !!token);
+      
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
@@ -44,22 +47,37 @@ class AuthService {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      console.log('Making request to:', `${this.baseUrl}/api/v1/auth/me`);
       const response = await fetch(`${this.baseUrl}/api/v1/auth/me`, {
         method: 'GET',
         credentials: 'include', // Include httpOnly cookies
         headers,
       });
 
+      console.log('Response status:', response.status, response.statusText);
+
       if (!response.ok) {
         if (response.status === 401) {
+          console.log('Unauthorized, clearing token');
           // Clear invalid token
           localStorage.removeItem('access_token');
           return null; // Not authenticated
         }
+        console.error('Failed to get user info:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
         throw new Error(`Failed to get user info: ${response.statusText}`);
       }
 
       const userData = await response.json();
+      console.log('Received user data:', userData);
+      
+      // Validate that we have the required fields
+      if (!userData.email || !userData.name || !userData.user_id) {
+        console.error('Invalid user data received:', userData);
+        throw new Error('Invalid user data received from server');
+      }
+      
       return userData;
     } catch (error) {
       console.error('Error getting current user:', error);

@@ -25,7 +25,11 @@ export default function AuthCallback() {
           localStorage.setItem('access_token', token);
           console.log('Token stored in localStorage');
           
+          // Small delay to ensure token is saved
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           // Verify the token by getting user info
+          console.log('Attempting to get user info...');
           const user = await authService.getCurrentUser();
           
           if (user) {
@@ -41,16 +45,16 @@ export default function AuthCallback() {
               console.log('Navigating to home page...');
               // Redirect to main app welcome page
               navigate('/', { replace: true });
-            }, 200);
+            }, 300);
           } else {
-            console.error('Failed to get user info after authentication');
+            console.error('Failed to get user info after authentication - user is null');
             localStorage.removeItem('access_token');
-            navigate('/login?error=user_info_failed');
+            navigate('/login?error=user_info_failed&details=user_null');
           }
         } catch (error) {
           console.error('Error handling authentication callback:', error);
           localStorage.removeItem('access_token');
-          navigate('/login?error=callback_error');
+          navigate('/login?error=callback_error&details=' + encodeURIComponent(error.message || 'unknown'));
         }
       } else {
         console.error('No token received in callback');
