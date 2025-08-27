@@ -58,17 +58,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     refreshUser();
   }, []);
 
-  // Check for OAuth callback URL parameters and refresh user
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('oauth_success') === 'true') {
-      // Remove the query parameters from URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      // Refresh user data after successful OAuth
-      refreshUser();
-    }
-  }, []);
-
   const contextValue: AuthContextType = {
     ...authState,
     login,

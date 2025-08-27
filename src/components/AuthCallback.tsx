@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authService } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { refreshUser } = useAuth();
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -21,16 +23,28 @@ export default function AuthCallback() {
         try {
           // Store the token in localStorage
           localStorage.setItem('access_token', token);
+          console.log('Token stored in localStorage');
           
           // Verify the token by getting user info
           const user = await authService.getCurrentUser();
           
           if (user) {
             console.log('Authentication successful for user:', user.email);
-            // Redirect to main app
-            navigate('/');
+            
+            // Trigger AuthContext to refresh and recognize the authenticated user
+            console.log('Refreshing auth context...');
+            await refreshUser();
+            console.log('Auth context refreshed');
+            
+            // Small delay to ensure state updates
+            setTimeout(() => {
+              console.log('Navigating to home page...');
+              // Redirect to main app welcome page
+              navigate('/', { replace: true });
+            }, 200);
           } else {
             console.error('Failed to get user info after authentication');
+            localStorage.removeItem('access_token');
             navigate('/login?error=user_info_failed');
           }
         } catch (error) {
@@ -45,7 +59,7 @@ export default function AuthCallback() {
     };
 
     handleAuthCallback();
-  }, [navigate, searchParams]);
+  }, [navigate, searchParams, refreshUser]);
 
   return (
     <div className="min-h-screen bg-gradient-warm flex items-center justify-center">
