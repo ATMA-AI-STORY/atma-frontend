@@ -10,9 +10,6 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      console.log('🚀 AuthCallback: Starting authentication callback handler');
-      console.log('📍 AuthCallback: Current URL:', window.location.href);
-      
       const token = searchParams.get('token');
       const error = searchParams.get('error');
 
@@ -23,41 +20,29 @@ export default function AuthCallback() {
       });
 
       if (error) {
-        console.error('❌ AuthCallback: Authentication error:', error);
         navigate('/login?error=' + error);
         return;
       }
 
       if (token) {
         try {
-          console.log('💾 AuthCallback: Storing token in localStorage...');
           // Store the token in localStorage
           localStorage.setItem('access_token', token);
-          console.log('✅ AuthCallback: Token stored successfully');
           
           // Small delay to ensure token is saved
           await new Promise(resolve => setTimeout(resolve, 100));
-          console.log('⏱️ AuthCallback: Delay completed');
           
           // Verify the token by getting user info
-          console.log('🔍 AuthCallback: Attempting to get user info...');
           const user = await authService.getCurrentUser();
           
           if (user) {
-            console.log('✅ AuthCallback: Authentication successful for user:', {
-              email: user.email,
-              name: user.name,
-              user_id: user.user_id
-            });
+
             
             // Trigger AuthContext to refresh and recognize the authenticated user
-            console.log('🔄 AuthCallback: Refreshing auth context...');
             await refreshUser();
-            console.log('✅ AuthCallback: Auth context refreshed');
             
             // Small delay to ensure state updates
             setTimeout(() => {
-              console.log('🚀 AuthCallback: Navigating to home page...');
               // Redirect to main app welcome page
               navigate('/', { replace: true });
             }, 300);

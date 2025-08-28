@@ -10,13 +10,14 @@ import FinalDelivery from "@/components/FinalDelivery";
 import VideoLibrary from "@/components/VideoLibrary";
 import StepProgress from "@/components/StepProgress";
 import { apiService, type Chapter } from "@/lib/api";
+import { ImageUploadResponse } from "@/lib/imageApi";
 import { useToast } from "@/hooks/use-toast";
 
 type Step = 'welcome' | 'upload' | 'story' | 'script' | 'theme' | 'audio' | 'preview' | 'final' | 'library';
 type CreationStep = 'upload' | 'story' | 'script' | 'theme' | 'audio' | 'preview' | 'final';
 
 interface VideoData {
-  images: File[];
+  uploadedImages: ImageUploadResponse[];
   story: string;
   script: string;
   chapters: Chapter[];
@@ -33,7 +34,7 @@ const Index = () => {
   const [completedSteps, setCompletedSteps] = useState<Set<CreationStep>>(new Set());
   const [isProcessingStory, setIsProcessingStory] = useState(false);
   const [videoData, setVideoData] = useState<VideoData>({
-    images: [],
+    uploadedImages: [],
     story: '',
     script: '',
     chapters: [],
@@ -61,8 +62,8 @@ const Index = () => {
     }
   };
 
-  const handleUploadNext = (images: File[]) => {
-    setVideoData(prev => ({ ...prev, images }));
+  const handleUploadNext = (uploadedImages: ImageUploadResponse[]) => {
+    setVideoData(prev => ({ ...prev, uploadedImages }));
     markStepCompleted('upload');
     setCurrentStep('story');
   };
@@ -132,7 +133,7 @@ const Index = () => {
     setCurrentStep('welcome');
     setCompletedSteps(new Set());
     setVideoData({ 
-      images: [], 
+      uploadedImages: [], 
       story: '', 
       script: '', 
       chapters: [],
@@ -161,7 +162,7 @@ const Index = () => {
             case 'welcome':
               return <Welcome onCreateNew={handleCreateNew} onViewPast={handleViewPast} />;
             case 'upload':
-              return <UploadPhotos onNext={handleUploadNext} onBack={handleBack} />;
+              return <UploadPhotos onNext={handleUploadNext} onBack={handleBack} initialImages={videoData.uploadedImages} />;
             case 'story':
               return <TellStory onNext={handleStoryNext} onBack={handleBack} isLoading={isProcessingStory} initialStory={videoData.story} />;
             case 'script':
