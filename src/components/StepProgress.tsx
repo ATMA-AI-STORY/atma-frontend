@@ -25,7 +25,7 @@ export default function StepProgress({ currentStep, completedSteps, onStepClick 
   const progressPercentage = ((currentStepIndex + 1) / stepConfig.length) * 100;
 
   return (
-    <div className="bg-card border-b border-border sticky top-0 z-50 shadow-soft">
+    <div className="bg-card border-b border-border  z-50 shadow-soft">
       <div className="max-w-6xl mx-auto px-6 py-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -34,14 +34,16 @@ export default function StepProgress({ currentStep, completedSteps, onStepClick 
               ATMA
             </h1>
             <p className="text-sm text-muted-foreground">
-              Step {currentStepIndex + 1} of {stepConfig.length} • {Math.round(progressPercentage)}% Complete
-            </p>
+  Step {currentStepIndex + 1} of {stepConfig.length}
+  <span className="hidden md:inline"> • {Math.round(progressPercentage)}% Complete</span>
+</p>
+
           </div>
           <div className="text-right">
             <p className="text-sm font-medium text-foreground">
               {stepConfig[currentStepIndex]?.name}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="whitespace-nowrap text-xs text-muted-foreground">
               Creating Your Memory Video
             </p>
           </div>

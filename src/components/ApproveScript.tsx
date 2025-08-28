@@ -35,7 +35,7 @@ export default function ApproveScript({ chapters, onNext, onBack }: ApproveScrip
 
   return (
     <div className="min-h-screen bg-gradient-warm p-4 md:p-8">
-      <div className="container mx-auto max-w-4xl">
+      <div className="container  max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
@@ -134,28 +134,34 @@ export default function ApproveScript({ chapters, onNext, onBack }: ApproveScrip
           </div>
         </Card>
 
-        {/* Navigation */}
-        <div className="flex items-center justify-between">
-          <Button 
-            variant="memory" 
-            size="lg" 
-            onClick={onBack}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back & Edit Story
-          </Button>
-          
-          <Button 
-            variant="hero" 
-            size="lg" 
-            onClick={() => onNext(script.map(s => s.script).join(' '))}
-            className="flex items-center gap-2"
-          >
-            Approve Script
-            <ArrowRight className="w-5 h-5" />
-          </Button>
-        </div>
+{/* Navigation */}
+<div className="flex items-center justify-between">
+  <Button 
+    variant="memory" 
+    size="default" 
+    onClick={onBack}
+    className="flex items-center gap-2 
+               text-xs px-3 py-2   /* mobile */
+               sm:text-sm sm:px-4 sm:py-2   /* small screens */
+               md:text-base md:px-5 md:py-3"  /* desktop */
+  >
+    <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+    Back & Edit Story
+  </Button>
+  
+  <Button 
+    variant="hero" 
+    size="default" 
+    onClick={() => onNext(script.map(s => s.script).join(' '))}
+    className="flex items-center gap-2 
+               text-xs px-3 py-2   /* mobile */
+               sm:text-sm sm:px-4 sm:py-2   /* small screens */
+               md:text-base md:px-5 md:py-3"  /* desktop */
+  >
+    Approve Script
+    <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+  </Button>
+</div>
       </div>
     </div>
   );

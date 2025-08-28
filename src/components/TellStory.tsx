@@ -1,7 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ArrowRight, PenTool, Mic, Lightbulb, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  PenTool,
+  Mic,
+  Lightbulb,
+  Loader2,
+} from "lucide-react";
 import { useState } from "react";
 
 interface TellStoryProps {
@@ -11,56 +18,75 @@ interface TellStoryProps {
   initialStory?: string;
 }
 
-export default function TellStory({ onNext, onBack, isLoading = false, initialStory = "" }: TellStoryProps) {
+export default function TellStory({
+  onNext,
+  onBack,
+  isLoading = false,
+  initialStory = "",
+}: TellStoryProps) {
   const [story, setStory] = useState(initialStory);
-  const [mode, setMode] = useState<'write' | 'speak'>('write');
+  const [mode, setMode] = useState<"write" | "speak">("write");
 
   const promptSuggestions = [
     "Born in [year] in [city]",
-    "Graduated from [school] in [year]", 
+    "Graduated from [school] in [year]",
     "Married [partner name] in [year]",
     "Moved to [city] in [year]",
     "Career highlights and achievements",
     "Travels and adventures",
     "Family milestones and celebrations",
-    "Hobbies and passions"
+    "Hobbies and passions",
   ];
 
   const canProceed = story.trim().length > 0 && !isLoading;
 
   return (
-    <div className="min-h-screen bg-gradient-warm p-4 md:p-8">
-      <div className="container mx-auto max-w-4xl">
+    <div className="min-h-screen bg-gradient-warm p-1 md:p-8">
+      <div className="container  max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Tell Your <span className="bg-gradient-memory bg-clip-text text-transparent">Story</span>
+            Tell Your{" "}
+            <span className="bg-gradient-memory bg-clip-text text-transparent">
+              Story
+            </span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Share the key moments, milestones, and memories that define your journey.
+            Share the key moments, milestones, and memories that define your
+            journey.
           </p>
         </div>
 
         {/* Mode Selection */}
         <div className="flex gap-4 mb-8 justify-center">
           <Button
-            variant={mode === 'write' ? 'hero' : 'memory'}
+            variant={mode === "write" ? "hero" : "memory"}
             size="lg"
-            onClick={() => setMode('write')}
+            onClick={() => setMode("write")}
             className="flex items-center gap-2"
           >
             <PenTool className="w-5 h-5" />
-            Write Key Points
+            {/* Mobile text */}
+            <span className="sm:hidden">Write</span>
+            {/* Desktop text */}
+            <span className="hidden sm:inline">Write Key Points</span>
           </Button>
+
           <Button
-            variant={mode === 'speak' ? 'hero' : 'memory'}
+            variant={mode === "speak" ? "hero" : "memory"}
             size="lg"
-            onClick={() => setMode('speak')}
+            onClick={() => setMode("speak")}
             className="flex items-center gap-2"
           >
             <Mic className="w-5 h-5" />
-            Speak Your Story
-            <span className="text-xs bg-white/20 px-2 py-1 rounded-full">Coming Soon</span>
+            {/* Mobile text */}
+            <span className="sm:hidden">Speak</span>
+            {/* Desktop text */}
+            <span className="hidden sm:inline">Speak Your Story</span>
+            {/* "Coming Soon" only on desktop */}
+            <span className="text-xs bg-white/20 px-2 py-1 rounded-full hidden sm:inline">
+              Coming Soon
+            </span>
           </Button>
         </div>
 
@@ -69,14 +95,15 @@ export default function TellStory({ onNext, onBack, isLoading = false, initialSt
           {/* Main Input Area */}
           <div className="lg:col-span-2">
             <Card className="p-6 bg-white/95 backdrop-blur-sm border-0 shadow-card h-full">
-              {mode === 'write' ? (
+              {mode === "write" ? (
                 <div className="space-y-4">
                   <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
                     <PenTool className="w-5 h-5" />
                     Write About Your Life Events
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    Tell us about your journey. You can write in bullet points or paragraphs - whatever feels natural.
+                    Tell us about your journey. You can write in bullet points
+                    or paragraphs - whatever feels natural.
                   </p>
                   <Textarea
                     placeholder="Share your story here... For example:
@@ -108,7 +135,8 @@ export default function TellStory({ onNext, onBack, isLoading = false, initialSt
                       Voice recording feature coming soon!
                     </p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      For now, please use the "Write Key Points" option to share your story.
+                      For now, please use the "Write Key Points" option to share
+                      your story.
                     </p>
                   </div>
                 </div>
@@ -125,12 +153,14 @@ export default function TellStory({ onNext, onBack, isLoading = false, initialSt
               </h3>
               <div className="space-y-3">
                 {promptSuggestions.map((suggestion, index) => (
-                  <div 
+                  <div
                     key={index}
                     className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-3 cursor-pointer hover:bg-muted/50 transition-colors"
                     onClick={() => {
-                      if (mode === 'write') {
-                        setStory(prev => prev + (prev ? '\n• ' : '• ') + suggestion);
+                      if (mode === "write") {
+                        setStory(
+                          (prev) => prev + (prev ? "\n• " : "• ") + suggestion
+                        );
                       }
                     }}
                   >
@@ -140,7 +170,8 @@ export default function TellStory({ onNext, onBack, isLoading = false, initialSt
               </div>
               <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
                 <p className="text-xs text-muted-foreground">
-                  💡 <strong>Tip:</strong> Click any suggestion to add it to your story, then customize it with your details.
+                  💡 <strong>Tip:</strong> Click any suggestion to add it to
+                  your story, then customize it with your details.
                 </p>
               </div>
             </Card>
@@ -149,19 +180,19 @@ export default function TellStory({ onNext, onBack, isLoading = false, initialSt
 
         {/* Navigation */}
         <div className="flex items-center justify-between">
-          <Button 
-            variant="memory" 
-            size="lg" 
+          <Button
+            variant="memory"
+            size="lg"
             onClick={onBack}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="w-5 h-5" />
             Back
           </Button>
-          
-          <Button 
-            variant="hero" 
-            size="lg" 
+
+          <Button
+            variant="hero"
+            size="lg"
             onClick={() => onNext(story)}
             disabled={!canProceed}
             className="flex items-center gap-2"

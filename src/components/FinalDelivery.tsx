@@ -165,25 +165,41 @@ export default function FinalDelivery({ onStartOver }: FinalDeliveryProps) {
           </Card>
         </div>
 
-        {/* Sharing Options */}
-        <Card className="p-6 mb-8 bg-white/95 backdrop-blur-sm border-0 shadow-soft">
-          <h3 className="text-lg font-semibold text-foreground mb-4 text-center">Quick Share Options</h3>
-          <div className="flex justify-center gap-4">
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              Email
-            </Button>
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              📱 Text
-            </Button>
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              📘 Facebook
-            </Button>
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              📧 WhatsApp
-            </Button>
-          </div>
-        </Card>
+       {/* Sharing Options */}
+<Card className="p-6 mb-8 bg-white/95 backdrop-blur-sm border-0 shadow-soft">
+  <h3 className="text-lg font-semibold text-foreground mb-4 text-center">Quick Share Options</h3>
+  <div className="flex flex-wrap justify-center gap-2">
+    <Button 
+      variant="outline" 
+      size="sm" 
+      className="flex items-center gap-1 text-xs px-2 py-1"
+    >
+      <Mail className="w-3 h-3" />
+      Email
+    </Button>
+    <Button 
+      variant="outline" 
+      size="sm" 
+      className="flex items-center gap-1 text-xs px-2 py-1"
+    >
+      📱 Text
+    </Button>
+    <Button 
+      variant="outline" 
+      size="sm" 
+      className="flex items-center gap-1 text-xs px-2 py-1"
+    >
+      📘 Facebook
+    </Button>
+    <Button 
+      variant="outline" 
+      size="sm" 
+      className="flex items-center gap-1 text-xs px-2 py-1"
+    >
+      📧 WhatsApp
+    </Button>
+  </div>
+</Card>
 
         {/* Video Details */}
         <Card className="p-6 mb-8 bg-gradient-memory text-white border-0 shadow-memory">
