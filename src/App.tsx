@@ -23,9 +23,9 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/" element={
-            // <ProtectedRoute>
+           <ProtectedRoute>
                 <Index />
-              // </ProtectedRoute>
+              </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
