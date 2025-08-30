@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Upload, X, ArrowLeft, ArrowRight, Image as ImageIcon, AlertCircle, CheckCircle } from "lucide-react";
+import { Upload, X, ArrowLeft, ArrowRight, Image as ImageIcon, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { imageApiService, ImageUploadResponse, UploadProgress } from "@/lib/imageApi";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,12 +18,13 @@ interface UploadedImage {
 }
 
 interface UploadPhotosProps {
-  onNext: (uploadedImages: ImageUploadResponse[]) => void;
+  onNext: (uploadedImages: ImageUploadResponse[]) => void | Promise<void>;
   onBack: () => void;
   initialImages?: ImageUploadResponse[];
+  isProcessing?: boolean;
 }
 
-export default function UploadPhotos({ onNext, onBack, initialImages = [] }: UploadPhotosProps) {
+export default function UploadPhotos({ onNext, onBack, initialImages = [], isProcessing = false }: UploadPhotosProps) {
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -283,7 +284,7 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [] }: Upl
     }
   };
 
-  const canProceed = (existingImages.length > 0 || (images.length > 0 && images.some(img => img.uploadStatus === 'completed'))) && !isUploading;
+  const canProceed = (existingImages.length > 0 || (images.length > 0 && images.some(img => img.uploadStatus === 'completed'))) && !isUploading && !isProcessing;
 
   return (
     <div className="min-h-screen bg-gradient-warm p-4 md:p-8">
@@ -356,6 +357,23 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [] }: Upl
             </div>
           )}
         </Card>
+
+        {/* Image Analysis Processing Indicator */}
+        {isProcessing && (
+          <Card className="p-6 mb-8 bg-white/95 backdrop-blur-sm border-0 shadow-card">
+            <div className="flex items-center justify-center space-x-4">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  Analyzing Your Images
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Our AI is analyzing faces, objects, and emotions in your photos to create a richer story experience...
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Photo Grid */}
         {(images.length > 0 || existingImages.length > 0) && (
@@ -494,8 +512,17 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [] }: Upl
             disabled={!canProceed}
             className="flex items-center gap-2"
           >
-            Continue ({getCompletedUploads().length} images)
-            <ArrowRight className="w-5 h-5" />
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Analyzing Images...
+              </>
+            ) : (
+              <>
+                Continue ({getCompletedUploads().length} images)
+                <ArrowRight className="w-5 h-5" />
+              </>
+            )}
           </Button>
         </div>
       </div>

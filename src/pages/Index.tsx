@@ -11,6 +11,7 @@ import VideoLibrary from "@/components/VideoLibrary";
 import StepProgress from "@/components/StepProgress";
 import { apiService, type Chapter } from "@/lib/api";
 import { ImageUploadResponse } from "@/lib/imageApi";
+import { imageAnalysisApiService, ImageAnalysisResponse } from "@/lib/imageAnalysisApi";
 import { useToast } from "@/hooks/use-toast";
 
 type Step = 'welcome' | 'upload' | 'story' | 'script' | 'theme' | 'audio' | 'preview' | 'final' | 'library';
@@ -18,6 +19,7 @@ type CreationStep = 'upload' | 'story' | 'script' | 'theme' | 'audio' | 'preview
 
 interface VideoData {
   uploadedImages: ImageUploadResponse[];
+  imageAnalysis?: ImageAnalysisResponse; // Store image analysis results
   story: string;
   script: string;
   chapters: Chapter[];
@@ -33,6 +35,7 @@ const Index = () => {
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
   const [completedSteps, setCompletedSteps] = useState<Set<CreationStep>>(new Set());
   const [isProcessingStory, setIsProcessingStory] = useState(false);
+  const [isProcessingImageAnalysis, setIsProcessingImageAnalysis] = useState(false);
   const [videoData, setVideoData] = useState<VideoData>({
     uploadedImages: [],
     story: '',
@@ -62,10 +65,56 @@ const Index = () => {
     }
   };
 
-  const handleUploadNext = (uploadedImages: ImageUploadResponse[]) => {
-    setVideoData(prev => ({ ...prev, uploadedImages }));
-    markStepCompleted('upload');
-    setCurrentStep('story');
+  const handleUploadNext = async (uploadedImages: ImageUploadResponse[]) => {
+    setIsProcessingImageAnalysis(true);
+    
+    try {
+      // Update images in state immediately
+      setVideoData(prev => ({ ...prev, uploadedImages }));
+      
+      // Prepare image analysis request
+      const analysisRequest = {
+        images: uploadedImages.map(img => ({
+          img_id: img.id,
+          metadata: img.metadata || {}
+        })),
+        request_timestamp: new Date().toISOString()
+      };
+
+      console.log('🔍 Starting image analysis for uploaded images:', analysisRequest);
+
+      // Call image analysis API
+      const analysisResponse = await imageAnalysisApiService.analyzeBatch(analysisRequest);
+      
+      // Store analysis results
+      setVideoData(prev => ({ ...prev, imageAnalysis: analysisResponse }));
+      
+      // Log the detailed JSON response to console as requested
+      console.log('📊 Image Analysis Results:', JSON.stringify(analysisResponse, null, 2));
+      
+      toast({
+        title: "Image analysis completed!",
+        description: `Analyzed ${analysisResponse.successful_analyses} of ${analysisResponse.total_images} images successfully.`,
+      });
+      
+      markStepCompleted('upload');
+      setCurrentStep('story');
+      
+    } catch (error) {
+      console.error('❌ Image analysis failed:', error);
+      
+      toast({
+        title: "Image analysis failed",
+        description: error instanceof Error ? error.message : "An error occurred during image analysis.",
+        variant: "destructive",
+      });
+      
+      // Still allow progression even if analysis fails
+      markStepCompleted('upload');
+      setCurrentStep('story');
+    } finally {
+      setIsProcessingImageAnalysis(false);
+    }
   };
 
   const handleStoryNext = async (story: string) => {
@@ -162,7 +211,7 @@ const Index = () => {
             case 'welcome':
               return <Welcome onCreateNew={handleCreateNew} onViewPast={handleViewPast} />;
             case 'upload':
-              return <UploadPhotos onNext={handleUploadNext} onBack={handleBack} initialImages={videoData.uploadedImages} />;
+              return <UploadPhotos onNext={handleUploadNext} onBack={handleBack} initialImages={videoData.uploadedImages} isProcessing={isProcessingImageAnalysis} />;
             case 'story':
               return <TellStory onNext={handleStoryNext} onBack={handleBack} isLoading={isProcessingStory} initialStory={videoData.story} />;
             case 'script':
