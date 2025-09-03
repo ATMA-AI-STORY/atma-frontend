@@ -52,6 +52,7 @@ export default function Welcome({ onCreateNew, onViewPast }: WelcomeProps) {
             >
               <LogOut className="w-4 h-4 mr-2" />
               Logout
+              
             </Button>
           </div>
         )}
