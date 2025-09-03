@@ -30,34 +30,36 @@ export default function Welcome({ onCreateNew, onViewPast }: WelcomeProps) {
     <h2 className="text-2xl font-bold text-foreground">ATMA</h2>
   </div>
   
-  {user && (
-    <div className="flex items-center space-x-4">
-      <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2">
-        {user.picture ? (
-          <img 
-            src={user.picture} 
-            alt={user.name} 
-            className="w-8 h-8 rounded-full"
-          />
-        ) : (
-          <User className="w-8 h-8 text-gray-600" />
-        )}
-        {/* Username hidden on mobile, visible from md+ */}
-        <span className="hidden md:inline text-sm font-medium text-gray-700">
-          {user.name}
-        </span>
-      </div>
-      <Button 
-        variant="outline" 
-        size="sm"
-        onClick={handleLogout}
-        className="bg-white/90 backdrop-blur-sm"
-      >
-        <LogOut className="w-4 h-4 mr-2" />
-        Logout
-      </Button>
+{user && (
+  <div className="flex flex-col items-center gap-3">
+    <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2">
+      {user.picture ? (
+        <img 
+          src={user.picture} 
+          alt={user.name} 
+          className="w-8 h-8 rounded-full"
+        />
+      ) : (
+        <User className="w-8 h-8 text-gray-600" />
+      )}
+      {/* Username hidden on mobile, visible from md+ */}
+      <span className="hidden md:inline text-sm font-medium text-gray-700">
+        {user.name}
+      </span>
     </div>
-  )}
+
+    {/* Logout styled same as profile block */}
+    <button
+      onClick={handleLogout}
+      className="flex items-center space-x-2 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
+    >
+      <LogOut className="w-4 h-4" />
+      <span>Logout</span>
+    </button>
+  </div>
+)}
+
+
 </header>
 
       
