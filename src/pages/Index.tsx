@@ -12,6 +12,7 @@ import StepProgress from "@/components/StepProgress";
 import { apiService, type Chapter } from "@/lib/api";
 import { ImageUploadResponse } from "@/lib/imageApi";
 import { imageAnalysisApiService, ImageAnalysisResponse } from "@/lib/imageAnalysisApi";
+import { videoApiService } from "@/lib/videoApi";
 import { useToast } from "@/hooks/use-toast";
 
 type Step = 'welcome' | 'upload' | 'story' | 'script' | 'theme' | 'audio' | 'preview' | 'final' | 'library';
@@ -221,7 +222,15 @@ const Index = () => {
             case 'audio':
               return <ChooseAudio onNext={handleAudioNext} onBack={handleBack} />;
             case 'preview':
-              return <PreviewVideo onApprove={handlePreviewApprove} onBack={handleBack} />;
+              return <PreviewVideo 
+                onApprove={handlePreviewApprove} 
+                onBack={handleBack} 
+                chapters={videoData.chapters}
+                uploadedImages={videoData.uploadedImages}
+                imageAnalysis={videoData.imageAnalysis}
+                theme={videoData.theme}
+                audio={videoData.audio}
+              />;
             case 'final':
               return <FinalDelivery onStartOver={handleStartOver} />;
             case 'library':
