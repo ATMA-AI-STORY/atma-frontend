@@ -10,9 +10,18 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     proxy: {
       '/api': {
-        target: 'https://atma-backend-sobw.onrender.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path,
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('🔄 Proxy Request:', req.method, req.url);
+            console.log('🔄 Headers:', req.headers);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('🔄 Proxy Response:', proxyRes.statusCode, req.url);
+          });
+        },
       },
     },
   },
