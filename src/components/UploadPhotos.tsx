@@ -50,15 +50,46 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [] }: Upl
   // Load images from session data when component mounts or when initialImages change
   useEffect(() => {
     if (initialImages.length > 0) {
+      console.log('🔍 UploadPhotos: Loading initial images:', initialImages);
+      
       // Convert initial images to UploadedImage format for display
-      const convertedImages: UploadedImage[] = initialImages.map((img) => ({
-        id: img.id,
-        file: new File([], img.original_filename), // Create dummy file for consistency
-        preview: `${import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"}${img.upload_url}`,
-        uploadResponse: img,
-        uploadStatus: "completed" as const
-      }));
+      const convertedImages: UploadedImage[] = initialImages.map((img) => {
+        // Construct proper image URL for existing images
+        const baseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+        let imageUrl: string;
+        
+        if (img.upload_url) {
+          // If upload_url exists, use it (could be relative or absolute)
+          imageUrl = img.upload_url.startsWith('http') 
+            ? img.upload_url 
+            : `${baseUrl}${img.upload_url}`;
+        } else {
+          // Fallback: construct URL using image ID
+          imageUrl = `${baseUrl}/api/v1/images/${img.id}/file`;
+        }
+        
+        console.log(`🖼️ Processing image ${img.original_filename}:`, {
+          imageId: img.id,
+          original_upload_url: img.upload_url,
+          constructed_url: imageUrl,
+          base_url: baseUrl
+        });
+        
+        return {
+          id: img.id,
+          file: new File([], img.original_filename, { type: img.mime_type || 'image/jpeg' }),
+          preview: imageUrl,
+          uploadResponse: img,
+          uploadStatus: "completed" as const
+        };
+      });
+      
+      console.log('✅ UploadPhotos: Converted images:', convertedImages);
       setImages(convertedImages);
+    } else {
+      // Clear images if no initial images (fresh session)
+      console.log('🧹 UploadPhotos: Clearing images for fresh session');
+      setImages([]);
     }
   }, [initialImages]);
 
@@ -375,12 +406,21 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [] }: Upl
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {/* Current session images */}
               {images.map((image, index) => (
-                <div key={`new-${image.id}`} className="relative group">
+                <div key={`image-${image.id}`} className="relative group">
                   <div className="aspect-square bg-muted rounded-lg overflow-hidden">
                     <img
                       src={image.preview}
-                      alt={`Upload ${index + 1}`}
+                      alt={image.uploadResponse?.original_filename || `Upload ${index + 1}`}
                       className="w-full h-full object-cover"
+                      onLoad={() => console.log(`✅ Image loaded successfully: ${image.preview}`)}
+                      onError={(e) => {
+                        console.error(`❌ Failed to load image: ${image.preview}`);
+                        console.error('Image error details:', {
+                          image: image,
+                          event: e,
+                          src: (e.target as HTMLImageElement).src
+                        });
+                      }}
                     />
 
                     {/* Upload status overlay */}

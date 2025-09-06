@@ -175,6 +175,11 @@ class ImageApiService {
 
       const result: ImageUploadResponse = await response.json();
       
+      // Ensure upload_url is present for image display
+      if (!result.upload_url) {
+        result.upload_url = `/api/v1/images/${result.id}/file`;
+      }
+      
       // Log metadata to console as requested
       console.log('📊 ImageAPI: Upload successful with metadata:', {
         imageId: result.id,
