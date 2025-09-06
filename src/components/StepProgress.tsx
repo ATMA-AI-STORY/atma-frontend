@@ -30,9 +30,11 @@ export default function StepProgress({ currentStep, completedSteps, onStepClick 
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
+            <a href="/">
             <h1 className="text-2xl font-bold bg-gradient-memory bg-clip-text text-transparent">
               ATMA
             </h1>
+            </a>
             <p className="text-sm text-muted-foreground">
   Step {currentStepIndex + 1} of {stepConfig.length}
   <span className="hidden md:inline"> • {Math.round(progressPercentage)}% Complete</span>

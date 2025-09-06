@@ -49,45 +49,6 @@ export default function ApproveScript({ chapters, imageAnalysis, isProcessingIma
           </p>
         </div>
 
-        {/* Image Analysis Status */}
-        <Card className="p-6 mb-8 bg-white/95 backdrop-blur-sm border-0 shadow-card">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {isProcessingImageAnalysis ? (
-                <>
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">Analyzing Images</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Our AI is analyzing your photos to enhance the story...
-                    </p>
-                  </div>
-                </>
-              ) : imageAnalysis ? (
-                <>
-                  <CheckCircle className="w-6 h-6 text-green-500" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">Image Analysis Complete</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Successfully analyzed {imageAnalysis.successful_analyses} of {imageAnalysis.total_images} images
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="w-6 h-6 text-orange-500" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">Image Analysis Pending</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Your photos will be analyzed to enhance the video creation process
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </Card>
-
         {/* Script Content */}
         <div className="space-y-6 mb-8">
           {script.map((section, index) => (
@@ -173,6 +134,45 @@ export default function ApproveScript({ chapters, imageAnalysis, isProcessingIma
             <p className="text-white/90">
               Your story contains {script.length} chapters and will create approximately a 3-4 minute memory video.
             </p>
+          </div>
+        </Card>
+
+        {/* Image Analysis Status */}
+        <Card className="p-6 mb-8 bg-white/95 backdrop-blur-sm border-0 shadow-card">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {isProcessingImageAnalysis ? (
+                <>
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Analyzing Images</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Our AI is analyzing your photos to enhance the story...
+                    </p>
+                  </div>
+                </>
+              ) : imageAnalysis ? (
+                <>
+                  <CheckCircle className="w-6 h-6 text-green-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Image Analysis Complete</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Successfully analyzed {imageAnalysis.successful_analyses} of {imageAnalysis.total_images} images
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-6 h-6 text-orange-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Image Analysis Pending</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Your photos will be analyzed to enhance the video creation process
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </Card>
 

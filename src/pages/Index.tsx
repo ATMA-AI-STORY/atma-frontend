@@ -208,7 +208,7 @@ const Index = () => {
             case 'welcome':
               return <Welcome onCreateNew={handleCreateNew} onViewPast={handleViewPast} />;
             case 'upload':
-              return <UploadPhotos onNext={handleUploadNext} onBack={handleBack} initialImages={videoData.uploadedImages} isProcessing={isProcessingImageAnalysis} />;
+              return <UploadPhotos onNext={handleUploadNext} onBack={handleBack} />;
             case 'story':
               return <TellStory onNext={handleStoryNext} onBack={handleBack} isLoading={isProcessingStory} initialStory={videoData.story} />;
             case 'script':
