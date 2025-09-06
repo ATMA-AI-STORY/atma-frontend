@@ -47,7 +47,21 @@ const Index = () => {
   });
   const { toast } = useToast();
 
-  const handleCreateNew = () => setCurrentStep('upload');
+  const handleCreateNew = () => {
+    // Clear all data for fresh session
+    setCurrentStep('upload');
+    setCompletedSteps(new Set());
+    setVideoData({ 
+      uploadedImages: [], 
+      story: '', 
+      script: '', 
+      chapters: [],
+      theme: '', 
+      audio: { music: '', voice: '', subtitles: true } 
+    });
+    setIsProcessingImageAnalysis(false);
+    setIsProcessingStory(false);
+  };
   const handleViewPast = () => setCurrentStep('library');
   
   const handleStepClick = (step: CreationStep) => {
@@ -98,7 +112,7 @@ const Index = () => {
       
       toast({
         title: "Image analysis completed!",
-        description: `Analyzed ${analysisResponse.successful_analyses} of ${analysisResponse.total_images} images successfully.`,
+        description: "Your photos have been analyzed successfully.",
       });
       
     } catch (error) {
@@ -136,7 +150,7 @@ const Index = () => {
       
       toast({
         title: "Story processed successfully!",
-        description: `Generated ${response.chapters.length} chapters from your story.`,
+        description: "Your story has been structured into chapters.",
       });
       
     } catch (error) {
@@ -186,6 +200,8 @@ const Index = () => {
       theme: '', 
       audio: { music: '', voice: '', subtitles: true } 
     });
+    setIsProcessingImageAnalysis(false);
+    setIsProcessingStory(false);
   };
 
   // Render current step
@@ -208,7 +224,7 @@ const Index = () => {
             case 'welcome':
               return <Welcome onCreateNew={handleCreateNew} onViewPast={handleViewPast} />;
             case 'upload':
-              return <UploadPhotos onNext={handleUploadNext} onBack={handleBack} />;
+              return <UploadPhotos onNext={handleUploadNext} onBack={handleBack} initialImages={videoData.uploadedImages} />;
             case 'story':
               return <TellStory onNext={handleStoryNext} onBack={handleBack} isLoading={isProcessingStory} initialStory={videoData.story} />;
             case 'script':

@@ -157,7 +157,7 @@ export default function ApproveScript({ chapters, imageAnalysis, isProcessingIma
                   <div>
                     <h3 className="text-lg font-semibold text-foreground">Image Analysis Complete</h3>
                     <p className="text-sm text-muted-foreground">
-                      Successfully analyzed {imageAnalysis.successful_analyses} of {imageAnalysis.total_images} images
+                      Your photos have been analyzed successfully
                     </p>
                   </div>
                 </>
