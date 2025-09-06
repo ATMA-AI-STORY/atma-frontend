@@ -33,8 +33,6 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [], isPro
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [overallProgress, setOverallProgress] = useState(0);
-  const [existingImages, setExistingImages] =
-    useState<ImageUploadResponse[]>(initialImages);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -50,77 +48,23 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [], isPro
     return true;
   }, [user, navigate]);
 
-  // Load existing images from backend on component mount
+  // Initialize fresh session - only load images if provided in initialImages
   useEffect(() => {
-    const loadExistingImages = async () => {
-      if (!checkAuth()) return;
-
-      try {
-        const response = await imageApiService.listImages();
-        // Convert ImageResponse to ImageUploadResponse by adding upload_url
-        const convertedImages: ImageUploadResponse[] = response.images.map(
-          (img) => ({
-            id: img.id,
-            filename: img.filename,
-            original_filename: img.original_filename,
-            file_size: img.file_size,
-            mime_type: img.mime_type,
-            width: img.width,
-            height: img.height,
-            processing_status: img.processing_status,
-            metadata: img.metadata,
-            upload_url: `/api/v1/images/${img.id}/file`, // Construct the URL for accessing the image
-          })
-        );
-        setExistingImages(convertedImages);
-      } catch (error) {
-        console.error("Failed to load existing images:", error);
-      }
-    };
-
-    // If no initial images provided, load from backend
-    if (initialImages.length === 0) {
-      loadExistingImages();
-    } else {
-      setExistingImages(initialImages);
+    if (initialImages.length > 0) {
+      // Convert initial images to UploadedImage format for consistency
+      const convertedImages: UploadedImage[] = initialImages.map((img, index) => ({
+        id: img.id,
+        file: new File([], img.original_filename), // Create dummy file for consistency
+        preview: `${import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"}${img.upload_url}`,
+        uploadResponse: img,
+        uploadStatus: "completed" as const
+      }));
+      setImages(convertedImages);
     }
-  }, [checkAuth, initialImages]);
+  }, [initialImages]);
 
-  // Delete existing image from backend
-  const deleteExistingImage = async (imageId: string) => {
-    if (!checkAuth()) return;
-
-    try {
-      await imageApiService.deleteImage(imageId);
-      setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
-      console.log(`✅ Image ${imageId} deleted successfully`);
-    } catch (error) {
-      console.error("Failed to delete image:", error);
-      // You could add a toast notification here
-    }
-  };
-
-  // Bulk delete all existing images
-  const clearAllExistingImages = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to delete all saved images? This cannot be undone."
-      )
-    ) {
-      return;
-    }
-
-    try {
-      // Delete each image from backend
-      for (const image of existingImages) {
-        await imageApiService.deleteImage(image.id);
-      }
-      setExistingImages([]);
-      console.log("✅ All saved images deleted successfully");
-    } catch (error) {
-      console.error("Failed to delete images:", error);
-    }
-  };
+  // Remove functions that are no longer needed since we don't load existing images
+  // Each session is fresh
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -299,12 +243,10 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [], isPro
   };
 
   const getCompletedUploads = (): ImageUploadResponse[] => {
-    // Combine existing images with newly uploaded ones
-    const newlyUploaded = images
+    // Only return newly uploaded images since we don't load existing ones
+    return images
       .filter((img) => img.uploadStatus === "completed" && img.uploadResponse)
       .map((img) => img.uploadResponse!);
-
-    return [...existingImages, ...newlyUploaded];
   };
 
   const getImageStatusIcon = (image: UploadedImage) => {
@@ -322,7 +264,7 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [], isPro
     }
   };
 
-  const canProceed = (existingImages.length > 0 || (images.length > 0 && images.some(img => img.uploadStatus === 'completed'))) && !isUploading && !isProcessing;
+  const canProceed = (images.length > 0 && images.some(img => img.uploadStatus === 'completed')) && !isUploading && !isProcessing;
 
   return (
     <div className="min-h-screen bg-gradient-warm p-4 md:p-8">
@@ -375,17 +317,19 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [], isPro
                   className="hidden"
                   id="photo-upload"
                 />
-                <Button
-                  variant="hero"
-                  size="lg"
-                  className="!flex !items-center !px-3 !py-2 !text-xs sm:!text-sm md:!text-base !whitespace-nowrap !cursor-pointer"
-                  onClick={() =>
-                    document.getElementById("photo-upload")?.click()
-                  }
-                >
-                  <ImageIcon className="!w-4 !h-4 !mr-1 sm:!w-5 sm:!h-5 sm:!mr-2 !shrink-0" />
-                  <span className="truncate">Choose Photos</span>
-                </Button>
+                <div className="flex justify-center">
+                  <Button
+                    variant="hero"
+                    size="lg"
+                    className="flex items-center gap-2"
+                    onClick={() =>
+                      document.getElementById("photo-upload")?.click()
+                    }
+                  >
+                    <ImageIcon className="w-5 h-5" />
+                    Choose Photos
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -424,25 +368,15 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [], isPro
         )}
 
         {/* Photo Grid */}
-        {(images.length > 0 || existingImages.length > 0) && (
+        {images.length > 0 && (
           <Card className="p-6 mb-8 bg-white/95 backdrop-blur-sm border-0 shadow-card">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-foreground">
-                {existingImages.length + images.length} photo
-                {existingImages.length + images.length !== 1 ? "s" : ""}{" "}
+                {images.length} photo
+                {images.length !== 1 ? "s" : ""}{" "}
                 selected
               </h3>
               <div className="flex gap-2">
-                {existingImages.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={clearAllExistingImages}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    Clear Saved Images
-                  </Button>
-                )}
                 {images.length > 0 && (
                   <Button
                     variant="outline"
@@ -450,58 +384,14 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [], isPro
                     onClick={clearAllImages}
                     disabled={isUploading}
                   >
-                    Clear New Uploads
+                    Clear All
                   </Button>
                 )}
               </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {/* Existing Images */}
-              {existingImages.map((image, index) => (
-                <div key={`existing-${image.id}`} className="relative group">
-                  <div className="aspect-square bg-muted rounded-lg overflow-hidden">
-                    <img
-                      src={`${
-                        import.meta.env.VITE_BACKEND_URL ||
-                        "http://localhost:8000"
-                      }${image.upload_url}`}
-                      alt={image.original_filename}
-                      className="w-full h-full object-cover"
-                    />
-
-                    {/* Status indicator */}
-                    <div className="absolute top-2 left-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                    </div>
-
-                    {/* Existing image label */}
-                    <div className="absolute top-2 right-2">
-                      <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                        Saved
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Delete button for existing images */}
-                  <button
-                    onClick={() => deleteExistingImage(image.id)}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-destructive/80"
-                    title="Delete this image"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-
-                  {/* Image info */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="truncate" title={image.original_filename}>
-                      {image.original_filename}
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* New Images */}
+              {/* Current session images */}
               {images.map((image, index) => (
                 <div key={`new-${image.id}`} className="relative group">
                   <div className="aspect-square bg-muted rounded-lg overflow-hidden">

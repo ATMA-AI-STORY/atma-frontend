@@ -1,16 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Edit3, Plus, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Edit3, Plus, Check, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import type { Chapter } from "@/lib/api";
+import type { ImageAnalysisResponse } from "@/lib/imageAnalysisApi";
 
 interface ApproveScriptProps {
   chapters: Chapter[];
+  imageAnalysis?: ImageAnalysisResponse;
+  isProcessingImageAnalysis?: boolean;
   onNext: (script: string) => void;
   onBack: () => void;
 }
 
-export default function ApproveScript({ chapters, onNext, onBack }: ApproveScriptProps) {
+export default function ApproveScript({ chapters, imageAnalysis, isProcessingImageAnalysis = false, onNext, onBack }: ApproveScriptProps) {
   // Use chapters from props, with fallback to empty array
   const [script, setScript] = useState<Chapter[]>(() => {
     // If chapters are provided, use them; otherwise create default structure
@@ -45,6 +48,45 @@ export default function ApproveScript({ chapters, onNext, onBack }: ApproveScrip
             We've crafted your narrative into a flowing story. Review and edit any sections before we create your video.
           </p>
         </div>
+
+        {/* Image Analysis Status */}
+        <Card className="p-6 mb-8 bg-white/95 backdrop-blur-sm border-0 shadow-card">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {isProcessingImageAnalysis ? (
+                <>
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Analyzing Images</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Our AI is analyzing your photos to enhance the story...
+                    </p>
+                  </div>
+                </>
+              ) : imageAnalysis ? (
+                <>
+                  <CheckCircle className="w-6 h-6 text-green-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Image Analysis Complete</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Successfully analyzed {imageAnalysis.successful_analyses} of {imageAnalysis.total_images} images
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-6 h-6 text-orange-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Image Analysis Pending</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Your photos will be analyzed to enhance the video creation process
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </Card>
 
         {/* Script Content */}
         <div className="space-y-6 mb-8">

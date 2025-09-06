@@ -55,21 +55,29 @@ export default function StepProgress({ currentStep, completedSteps, onStepClick 
         </div>
 
         {/* Step Indicators */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           {stepConfig.map((step, index) => {
             const isCompleted = completedSteps.has(step.key as Step);
             const isCurrent = step.key === currentStep;
-            const isClickable = true; // Allow free navigation
+            const currentStepIndex = stepConfig.findIndex(s => s.key === currentStep);
+            const stepIndex = index;
+            
+            // Allow clicking only on:
+            // 1. Completed steps (can go back)
+            // 2. Current step
+            // 3. Next step if current is completed (but this is handled in parent)
+            const isClickable = isCompleted || isCurrent || (stepIndex < currentStepIndex);
+            
             const Icon = step.icon;
 
             return (
               <button
                 key={step.key}
-                onClick={() => onStepClick(step.key as Step)}
+                onClick={() => isClickable && onStepClick(step.key as Step)}
                 disabled={!isClickable}
                 className={cn(
                   "flex flex-col items-center gap-2 p-2 rounded-lg transition-all duration-300 group min-w-0 flex-1",
-                  isClickable ? "hover:bg-accent cursor-pointer" : "cursor-not-allowed",
+                  isClickable ? "hover:bg-accent cursor-pointer" : "cursor-not-allowed opacity-60",
                   isCurrent && "bg-primary/10 ring-2 ring-primary/20"
                 )}
               >
@@ -81,7 +89,9 @@ export default function StepProgress({ currentStep, completedSteps, onStepClick 
                       ? "bg-primary text-primary-foreground"
                       : isCurrent
                       ? "bg-primary/20 text-primary"
-                      : "bg-muted text-muted-foreground group-hover:bg-accent"
+                      : isClickable
+                      ? "bg-muted text-muted-foreground group-hover:bg-accent"
+                      : "bg-muted/50 text-muted-foreground/50"
                   )}
                 >
                   <Icon size={18} />
@@ -96,12 +106,17 @@ export default function StepProgress({ currentStep, completedSteps, onStepClick 
                         ? "text-primary"
                         : isCurrent
                         ? "text-foreground"
-                        : "text-muted-foreground group-hover:text-foreground"
+                        : isClickable
+                        ? "text-muted-foreground group-hover:text-foreground"
+                        : "text-muted-foreground/50"
                     )}
                   >
                     {step.name}
                   </div>
-                  <div className="hidden md:block text-xs text-muted-foreground">
+                  <div className={cn(
+                    "hidden md:block text-xs",
+                    isClickable ? "text-muted-foreground" : "text-muted-foreground/50"
+                  )}>
                     {index + 1}
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authService } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,69 +7,52 @@ export default function AuthCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { refreshUser } = useAuth();
+  const processingRef = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple executions
+    if (processingRef.current) return;
+    processingRef.current = true;
+
     const handleAuthCallback = async () => {
       const token = searchParams.get('token');
       const error = searchParams.get('error');
 
-      console.log('🔍 AuthCallback: URL params:', {
-        token: token ? `${token.substring(0, 20)}...` : null,
-        error,
-        allParams: Object.fromEntries(searchParams.entries())
-      });
+      console.log('🔍 AuthCallback: Processing auth with token:', !!token, 'error:', error);
 
       if (error) {
-        navigate('/login?error=' + error);
+        navigate('/login?error=' + error, { replace: true });
         return;
       }
 
       if (token) {
         try {
-          // Store the token in localStorage
+          // Store token and get user info
           localStorage.setItem('access_token', token);
-          
-          // Small delay to ensure token is saved
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          // Verify the token by getting user info
           const user = await authService.getCurrentUser();
           
           if (user) {
-
-            
-            // Trigger AuthContext to refresh and recognize the authenticated user
+            console.log('✅ AuthCallback: User authenticated successfully');
             await refreshUser();
-            
-            // Small delay to ensure state updates
-            setTimeout(() => {
-              // Redirect to main app welcome page
-              navigate('/', { replace: true });
-            }, 300);
+            navigate('/', { replace: true });
           } else {
-            console.error('❌ AuthCallback: Failed to get user info after authentication - user is null');
+            console.error('❌ AuthCallback: No user data returned');
             localStorage.removeItem('access_token');
-            navigate('/login?error=user_info_failed&details=user_null');
+            navigate('/login?error=user_info_failed', { replace: true });
           }
         } catch (error) {
-          console.error('💥 AuthCallback: Error handling authentication callback:', error);
-          if (error instanceof Error) {
-            console.error('💥 AuthCallback: Error details:', {
-              message: error.message,
-              stack: error.stack
-            });
-          }
+          console.error('💥 AuthCallback: Authentication error:', error);
           localStorage.removeItem('access_token');
-          navigate('/login?error=callback_error&details=' + encodeURIComponent(error.message || 'unknown'));
+          navigate('/login?error=callback_error', { replace: true });
         }
       } else {
-        console.error('❌ AuthCallback: No token received in callback');
-        navigate('/login?error=no_token');
+        console.error('❌ AuthCallback: No token in callback');
+        navigate('/login?error=no_token', { replace: true });
       }
     };
 
     handleAuthCallback();
-  }, [navigate, searchParams, refreshUser]);
+  }, []); // Remove dependencies to prevent re-execution
 
   return (
     <div className="min-h-screen bg-gradient-warm flex items-center justify-center">

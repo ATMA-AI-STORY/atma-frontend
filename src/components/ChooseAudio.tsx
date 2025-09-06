@@ -25,38 +25,36 @@ interface Voice {
 }
 
 export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
-  const [selectedMusic, setSelectedMusic] = useState<string>('emotional-piano');
-  const [selectedVoice, setSelectedVoice] = useState<string>('sarah-warm');
+  const [selectedMusic, setSelectedMusic] = useState<string>('cinematic-default');
+  const [selectedVoice, setSelectedVoice] = useState<string>(''); // No voice selected since coming soon
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
   const [playingMusic, setPlayingMusic] = useState<string | null>(null);
-  const [playingVoice, setPlayingVoice] = useState<string | null>(null);
 
   const musicTracks: MusicTrack[] = [
+    { id: 'cinematic-default', name: 'Default Cinematic', mood: 'Cinematic', duration: '4:30' },
     { id: 'emotional-piano', name: 'Gentle Piano Memories', mood: 'Emotional', duration: '3:24' },
     { id: 'uplifting-strings', name: 'Hopeful Journey', mood: 'Uplifting', duration: '4:12' },
     { id: 'calm-acoustic', name: 'Peaceful Moments', mood: 'Calm', duration: '3:45' },
     { id: 'celebration', name: 'Joyful Celebration', mood: 'Celebration', duration: '3:18' },
-    { id: 'cinematic', name: 'Epic Life Story', mood: 'Cinematic', duration: '4:30' },
     { id: 'folk-guitar', name: 'Nostalgic Folk', mood: 'Nostalgic', duration: '3:56' }
   ];
 
   const voices: Voice[] = [
-    { id: 'sarah-warm', name: 'Sarah', gender: 'Female', accent: 'American', sample: 'Warm and compassionate, perfect for family stories' },
-    { id: 'michael-narrator', name: 'Michael', gender: 'Male', accent: 'British', sample: 'Distinguished narrator voice with gentle authority' },
-    { id: 'emma-gentle', name: 'Emma', gender: 'Female', accent: 'Canadian', sample: 'Soft and nurturing, ideal for personal memories' },
-    { id: 'david-wise', name: 'David', gender: 'Male', accent: 'American', sample: 'Wise and reflective, great for life journey stories' },
-    { id: 'maria-expressive', name: 'Maria', gender: 'Female', accent: 'Neutral', sample: 'Expressive and engaging, brings stories to life' }
+    { id: 'sarah-warm', name: 'Sarah', gender: 'Female', accent: 'American', sample: 'Coming soon - Warm and compassionate voice' },
+    { id: 'michael-narrator', name: 'Michael', gender: 'Male', accent: 'British', sample: 'Coming soon - Distinguished narrator voice' },
+    { id: 'emma-gentle', name: 'Emma', gender: 'Female', accent: 'Canadian', sample: 'Coming soon - Soft and nurturing voice' },
+    { id: 'david-wise', name: 'David', gender: 'Male', accent: 'American', sample: 'Coming soon - Wise and reflective voice' },
+    { id: 'maria-expressive', name: 'Maria', gender: 'Female', accent: 'Neutral', sample: 'Coming soon - Expressive and engaging voice' }
   ];
 
   const toggleMusicPlay = (trackId: string) => {
-    setPlayingMusic(playingMusic === trackId ? null : trackId);
+    // Only allow playing the default track
+    if (trackId === 'cinematic-default') {
+      setPlayingMusic(playingMusic === trackId ? null : trackId);
+    }
   };
 
-  const toggleVoicePlay = (voiceId: string) => {
-    setPlayingVoice(playingVoice === voiceId ? null : voiceId);
-  };
-
-  const canProceed = selectedMusic && selectedVoice;
+  const canProceed = selectedMusic === 'cinematic-default'; // Only proceed with default music
 
   return (
     <div className="p-4 md:p-8">
@@ -80,41 +78,50 @@ export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
             </h3>
             
             <div className="space-y-4">
-              {musicTracks.map((track) => (
-                <Card 
-                  key={track.id}
-                  className={`p-4 cursor-pointer transition-all duration-300 border-2 ${
-                    selectedMusic === track.id 
-                      ? 'border-primary shadow-card bg-white' 
-                      : 'border-transparent bg-white/95 hover:bg-white hover:shadow-soft'
-                  }`}
-                  onClick={() => setSelectedMusic(track.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-foreground">{track.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {track.mood} • {track.duration}
-                      </p>
+              {musicTracks.map((track) => {
+                const isAvailable = track.id === 'cinematic-default';
+                return (
+                  <Card 
+                    key={track.id}
+                    className={`p-4 transition-all duration-300 border-2 ${
+                      !isAvailable 
+                        ? 'opacity-60 cursor-not-allowed border-gray-300 bg-gray-50' 
+                        : selectedMusic === track.id 
+                          ? 'border-primary shadow-card bg-white cursor-pointer' 
+                          : 'border-transparent bg-white/95 hover:bg-white hover:shadow-soft cursor-pointer'
+                    }`}
+                    onClick={() => isAvailable && setSelectedMusic(track.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-foreground">{track.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {track.mood} • {track.duration}
+                          {!isAvailable && ' • Coming Soon'}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isAvailable) {
+                            toggleMusicPlay(track.id);
+                          }
+                        }}
+                        disabled={!isAvailable}
+                        className="ml-4"
+                      >
+                        {playingMusic === track.id ? (
+                          <Pause className="w-4 h-4" />
+                        ) : (
+                          <Play className="w-4 h-4" />
+                        )}
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleMusicPlay(track.id);
-                      }}
-                      className="ml-4"
-                    >
-                      {playingMusic === track.id ? (
-                        <Pause className="w-4 h-4" />
-                      ) : (
-                        <Play className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           </div>
 
@@ -126,46 +133,23 @@ export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
             </h3>
             
             <div className="space-y-4">
-              {voices.map((voice) => (
-                <Card 
-                  key={voice.id}
-                  className={`p-4 cursor-pointer transition-all duration-300 border-2 ${
-                    selectedVoice === voice.id 
-                      ? 'border-primary shadow-card bg-white' 
-                      : 'border-transparent bg-white/95 hover:bg-white hover:shadow-soft'
-                  }`}
-                  onClick={() => setSelectedVoice(voice.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-foreground">
-                        {voice.name} ({voice.gender})
-                      </h4>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {voice.accent} accent
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {voice.sample}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleVoicePlay(voice.id);
-                      }}
-                      className="ml-4"
-                    >
-                      {playingVoice === voice.id ? (
-                        <Pause className="w-4 h-4" />
-                      ) : (
-                        <Play className="w-4 h-4" />
-                      )}
-                    </Button>
+              <Card className="p-6 bg-white/95 backdrop-blur-sm border-0 shadow-card">
+                <div className="text-center">
+                  <h4 className="text-lg font-semibold text-foreground mb-2">
+                    Voice Narration Coming Soon!
+                  </h4>
+                  <p className="text-muted-foreground mb-4">
+                    We're working on bringing you professional voice narration options. 
+                    For now, your video will be created with text and music.
+                  </p>
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Future voices will include: Professional narrators, Multiple accents, 
+                      Emotional tone matching, and Custom voice options.
+                    </p>
                   </div>
-                </Card>
-              ))}
+                </div>
+              </Card>
             </div>
           </div>
         </div>
@@ -176,34 +160,33 @@ export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
             <div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Subtitles</h3>
               <p className="text-muted-foreground">
-                Display text on screen synchronized with the narration
+                Display text on screen synchronized with the video
               </p>
             </div>
             <Switch
               checked={subtitlesEnabled}
-              onCheckedChange={setSubtitlesEnabled}
+              onCheckedChange={() => {}} // Disabled - always on
+              disabled
             />
           </div>
           
-          {subtitlesEnabled && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-sm text-muted-foreground mb-3">Subtitle options:</p>
-              <div className="flex gap-4 text-sm">
-                <label className="flex items-center gap-2">
-                  <input type="radio" name="subtitle-style" defaultChecked className="text-primary" />
-                  <span>Clean & Simple</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="radio" name="subtitle-style" className="text-primary" />
-                  <span>Elegant Serif</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="radio" name="subtitle-style" className="text-primary" />
-                  <span>Modern Bold</span>
-                </label>
-              </div>
+          <div className="mt-4 pt-4 border-t border-border">
+            <p className="text-sm text-muted-foreground mb-3">Subtitle style: (Auto-selected)</p>
+            <div className="flex gap-4 text-sm">
+              <label className="flex items-center gap-2">
+                <input type="radio" name="subtitle-style" checked disabled className="text-primary" />
+                <span className="text-muted-foreground">Clean & Simple (Selected)</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="radio" name="subtitle-style" disabled className="text-primary opacity-50" />
+                <span className="text-muted-foreground opacity-50">Elegant Serif (Coming Soon)</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="radio" name="subtitle-style" disabled className="text-primary opacity-50" />
+                <span className="text-muted-foreground opacity-50">Modern Bold (Coming Soon)</span>
+              </label>
             </div>
-          )}
+          </div>
         </Card>
 
         {/* Audio Summary */}
@@ -212,8 +195,8 @@ export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
             <h3 className="text-xl font-semibold mb-2">Audio Selection Summary</h3>
             <p className="text-white/90">
               Music: {musicTracks.find(t => t.id === selectedMusic)?.name} • 
-              Voice: {voices.find(v => v.id === selectedVoice)?.name} • 
-              Subtitles: {subtitlesEnabled ? 'Enabled' : 'Disabled'}
+              Voice: Coming Soon • 
+              Subtitles: Enabled (Clean & Simple)
             </p>
           </div>
         </Card>
@@ -235,7 +218,7 @@ export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
             size="lg" 
             onClick={() => onNext({
               music: selectedMusic,
-              voice: selectedVoice,
+              voice: 'none', // No voice selected yet
               subtitles: subtitlesEnabled
             })}
             disabled={!canProceed}

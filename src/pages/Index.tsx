@@ -67,12 +67,15 @@ const Index = () => {
   };
 
   const handleUploadNext = async (uploadedImages: ImageUploadResponse[]) => {
+    // Update images in state immediately and proceed to next step
+    setVideoData(prev => ({ ...prev, uploadedImages }));
+    markStepCompleted('upload');
+    setCurrentStep('story');
+    
+    // Start image analysis in background
     setIsProcessingImageAnalysis(true);
     
     try {
-      // Update images in state immediately
-      setVideoData(prev => ({ ...prev, uploadedImages }));
-      
       // Prepare image analysis request
       const analysisRequest = {
         images: uploadedImages.map(img => ({
@@ -82,37 +85,30 @@ const Index = () => {
         request_timestamp: new Date().toISOString()
       };
 
-      console.log('🔍 Starting image analysis for uploaded images:', analysisRequest);
+      console.log('🔍 Starting background image analysis for uploaded images:', analysisRequest);
 
-      // Call image analysis API
+      // Call image analysis API in background
       const analysisResponse = await imageAnalysisApiService.analyzeBatch(analysisRequest);
       
-      // Store analysis results
+      // Store analysis results when completed
       setVideoData(prev => ({ ...prev, imageAnalysis: analysisResponse }));
       
       // Log the detailed JSON response to console as requested
-      console.log('📊 Image Analysis Results:', JSON.stringify(analysisResponse, null, 2));
+      console.log('📊 Background Image Analysis Results:', JSON.stringify(analysisResponse, null, 2));
       
       toast({
         title: "Image analysis completed!",
         description: `Analyzed ${analysisResponse.successful_analyses} of ${analysisResponse.total_images} images successfully.`,
       });
       
-      markStepCompleted('upload');
-      setCurrentStep('story');
-      
     } catch (error) {
-      console.error('❌ Image analysis failed:', error);
+      console.error('❌ Background image analysis failed:', error);
       
       toast({
         title: "Image analysis failed",
         description: error instanceof Error ? error.message : "An error occurred during image analysis.",
         variant: "destructive",
       });
-      
-      // Still allow progression even if analysis fails
-      markStepCompleted('upload');
-      setCurrentStep('story');
     } finally {
       setIsProcessingImageAnalysis(false);
     }
@@ -216,7 +212,13 @@ const Index = () => {
             case 'story':
               return <TellStory onNext={handleStoryNext} onBack={handleBack} isLoading={isProcessingStory} initialStory={videoData.story} />;
             case 'script':
-              return <ApproveScript chapters={videoData.chapters} onNext={handleScriptNext} onBack={handleBack} />;
+              return <ApproveScript 
+                chapters={videoData.chapters} 
+                imageAnalysis={videoData.imageAnalysis}
+                isProcessingImageAnalysis={isProcessingImageAnalysis}
+                onNext={handleScriptNext} 
+                onBack={handleBack} 
+              />;
             case 'theme':
               return <ChooseTheme onNext={handleThemeNext} onBack={handleBack} />;
             case 'audio':
