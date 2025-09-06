@@ -54,31 +54,19 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [] }: Upl
       
       // Convert initial images to UploadedImage format for display
       const convertedImages: UploadedImage[] = initialImages.map((img) => {
-        // Construct proper image URL for existing images
-        const baseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-        let imageUrl: string;
+        // Use the upload_url as preview since we store blob URLs there
+        const preview = img.upload_url || `${import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"}/api/v1/images/${img.id}/file`;
         
-        if (img.upload_url) {
-          // If upload_url exists, use it (could be relative or absolute)
-          imageUrl = img.upload_url.startsWith('http') 
-            ? img.upload_url 
-            : `${baseUrl}${img.upload_url}`;
-        } else {
-          // Fallback: construct URL using image ID
-          imageUrl = `${baseUrl}/api/v1/images/${img.id}/file`;
-        }
-        
-        console.log(`🖼️ Processing image ${img.original_filename}:`, {
+        console.log(`🖼️ Loading image ${img.original_filename}:`, {
           imageId: img.id,
-          original_upload_url: img.upload_url,
-          constructed_url: imageUrl,
-          base_url: baseUrl
+          preview: preview,
+          isBlob: preview.startsWith('blob:')
         });
         
         return {
           id: img.id,
           file: new File([], img.original_filename, { type: img.mime_type || 'image/jpeg' }),
-          preview: imageUrl,
+          preview: preview,
           uploadResponse: img,
           uploadStatus: "completed" as const
         };
@@ -135,12 +123,15 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [] }: Upl
   };
 
   const addFiles = (files: File[]) => {
-    const newImages: UploadedImage[] = files.map((file) => ({
-      id: `temp-${Date.now()}-${Math.random()}`,
-      file,
-      preview: URL.createObjectURL(file),
-      uploadStatus: "pending",
-    }));
+    const newImages: UploadedImage[] = files.map((file) => {
+      const blobUrl = URL.createObjectURL(file);
+      return {
+        id: `temp-${Date.now()}-${Math.random()}`,
+        file,
+        preview: blobUrl,
+        uploadStatus: "pending",
+      };
+    });
 
     setImages((prev) => [...prev, ...newImages]);
 
@@ -184,13 +175,16 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [] }: Upl
             }
           );
 
-          // Update with successful upload response
+          // Update with successful upload response but keep the original blob preview
           setImages((prev) =>
             prev.map((img) =>
               img.id === imageToUpload.id
                 ? {
                     ...img,
-                    uploadResponse,
+                    uploadResponse: {
+                      ...uploadResponse,
+                      upload_url: img.preview, // Keep the blob URL instead of server URL
+                    },
                     uploadStatus: "completed" as const,
                     id: uploadResponse.id, // Update with server ID
                   }
