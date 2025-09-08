@@ -37,6 +37,16 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { 
+  VideoPlayer,
+  VideoPlayerContent,
+  VideoPlayerControlBar,
+  VideoPlayerPlayButton,
+  VideoPlayerMuteButton,
+  VideoPlayerTimeDisplay,
+  VideoPlayerTimeRange,
+  VideoPlayerVolumeRange
+} from "@/components/ui/video-player";
 import { ArrowLeft, Play, Pause, RotateCcw, Download, Share2, Volume2, VolumeX, Edit, AlertCircle, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { videoApiService, VideoGenerationRequest, VideoPreviewResponse } from "@/lib/videoApi";
@@ -553,26 +563,32 @@ export default function PreviewVideo({
         {/* Video Player */}
         <Card className="p-8 mb-8 bg-white/95 backdrop-blur-sm border-0 shadow-card">
           <div className="aspect-video bg-gradient-to-br from-gray-900 via-gray-600 to-gray-300 rounded-lg overflow-hidden relative group">
-            {/* Actual Video Element */}
+            {/* Actual Video Element with media-chrome VideoPlayer */}
             {videoData?.video_preview_path && videoUrl ? (
-              <video
-                ref={videoRef}
-                className="w-full h-full object-cover"
-                onLoadedMetadata={handleVideoLoadedMetadata}
-                onTimeUpdate={handleVideoTimeUpdate}
-                onEnded={handleVideoEnded}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                muted={isMuted}
-                preload="metadata"
-                style={{ 
-                  filter: 'contrast(1.1) saturate(1.2)',
-                  pointerEvents: 'none' // Prevent direct video controls, use custom controls
-                }}
-                src={videoUrl}
-              >
-                Your browser does not support the video tag.
-              </video>
+              <VideoPlayer className="w-full h-full">
+                <VideoPlayerContent
+                  ref={videoRef}
+                  className="w-full h-full object-cover"
+                  onLoadedMetadata={handleVideoLoadedMetadata}
+                  onTimeUpdate={handleVideoTimeUpdate}
+                  onEnded={handleVideoEnded}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  muted={isMuted}
+                  preload="metadata"
+                  style={{ 
+                    filter: 'contrast(1.1) saturate(1.2)',
+                  }}
+                  src={videoUrl}
+                />
+                <VideoPlayerControlBar>
+                  <VideoPlayerPlayButton />
+                  <VideoPlayerTimeRange />
+                  <VideoPlayerTimeDisplay />
+                  <VideoPlayerMuteButton />
+                  <VideoPlayerVolumeRange />
+                </VideoPlayerControlBar>
+              </VideoPlayer>
             ) : (
               /* Fallback Preview Placeholder */
               <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
@@ -595,69 +611,9 @@ export default function PreviewVideo({
               </div>
             )}
 
-            {/* Play/Pause Overlay */}
-            <div 
-              className="absolute inset-0 flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              onClick={togglePlay}
-            >
-              <div className="w-20 h-20 bg-white/90 rounded-full flex items-center justify-center">
-                {isPlaying ? (
-                  <Pause className="w-10 h-10 text-gray-700" />
-                ) : (
-                  <Play className="w-10 h-10 text-gray-700 ml-1" />
-                )}
-              </div>
-            </div>
-
             {/* Preview Watermark Overlay */}
             <div className="absolute top-4 right-4 bg-red-500/90 text-white px-3 py-1 rounded-full text-sm font-semibold">
               PREVIEW
-            </div>
-
-            {/* Progress Bar and Controls */}
-            <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-4">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={togglePlay}
-                  className="text-white hover:bg-white/20"
-                  disabled={!videoData?.video_preview_path}
-                >
-                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                </Button>
-                
-                <div className="flex-1">
-                  <Progress 
-                    value={totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0} 
-                    className="h-2 bg-white/20"
-                  />
-                </div>
-                
-                <span className="text-white text-sm">
-                  {formatTime(currentTime)} / {formatTime(totalDuration || videoData?.duration || 245)}
-                </span>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleMute}
-                  className="text-white hover:bg-white/20"
-                  disabled={!videoData?.video_preview_path}
-                >
-                  {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={restartVideo}
-                  className="text-white hover:bg-white/20"
-                  disabled={!videoData?.video_preview_path}
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </Button>
-              </div>
             </div>
           </div>
         </Card>

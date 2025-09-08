@@ -1,22 +1,26 @@
-# Welcome to your Lovable project
+# ATMA - Memory Video Creator
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/abbcebd4-ea99-4235-a89b-08cdc6fe2f43
+**Description**: Create beautiful memory videos from your photos and stories. Turn your precious moments into timeless videos that preserve your journey forever.
 
 ## How can I edit this code?
 
 There are several ways of editing your application.
 
-**Use Lovable**
+**Use Local Development**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/abbcebd4-ea99-4235-a89b-08cdc6fe2f43) and start prompting.
+Simply clone this repository and run:
+```bash
+npm install
+npm run dev
+```
 
-Changes made via Lovable will be committed automatically to this repo.
+Changes can be made locally and committed to the repository.
 
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes. All changes will be reflected in the application.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -62,12 +66,19 @@ This project is built with:
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/abbcebd4-ea99-4235-a89b-08cdc6fe2f43) and click on Share -> Publish.
+You can deploy this project to any static hosting platform such as:
 
-## Can I connect a custom domain to my Lovable project?
+- Vercel: `npm run build` then deploy the `dist` folder
+- Netlify: Connect your repository and set build command to `npm run build`
+- GitHub Pages: Use GitHub Actions to build and deploy automatically
 
-Yes, you can!
+## Can I connect a custom domain?
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Yes, you can! Most hosting platforms support custom domains.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+For example, with Vercel:
+1. Go to your project settings
+2. Navigate to the Domains section
+3. Add your custom domain and follow the DNS configuration instructions
+
+Each hosting platform has its own process for custom domain setup.

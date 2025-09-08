@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { 
+  VideoPlayer,
+  VideoPlayerContent,
+  VideoPlayerControlBar,
+  VideoPlayerPlayButton,
+  VideoPlayerMuteButton,
+  VideoPlayerTimeDisplay,
+  VideoPlayerTimeRange,
+  VideoPlayerVolumeRange
+} from "@/components/ui/video-player";
 import { ArrowLeft, Play, Share2, Download, Plus, Calendar, Clock, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import { videoApiService, type UserVideo } from "@/lib/videoApi";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,12 +66,20 @@ function VideoCard({ video, onDownload, onDelete, isDeleting, formatDate, format
       {/* Video Preview */}
       <div className="aspect-video bg-gradient-to-br from-gray-900 via-gray-600 to-gray-300 rounded-lg overflow-hidden relative mb-4">
         {videoSrc ? (
-          <video 
-            src={videoSrc}
-            className="w-full h-full object-cover"
-            controls
-            preload="metadata"
-          />
+          <VideoPlayer className="w-full h-full">
+            <VideoPlayerContent
+              src={videoSrc}
+              className="w-full h-full object-cover"
+              preload="metadata"
+            />
+            <VideoPlayerControlBar>
+              <VideoPlayerPlayButton />
+              <VideoPlayerTimeRange />
+              <VideoPlayerTimeDisplay />
+              <VideoPlayerMuteButton />
+              <VideoPlayerVolumeRange />
+            </VideoPlayerControlBar>
+          </VideoPlayer>
         ) : (
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center cursor-pointer" onClick={loadVideoPreview}>
             <div className="text-center text-white space-y-2">
