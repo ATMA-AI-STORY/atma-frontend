@@ -38,21 +38,22 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { 
-  VideoPlayer,
-  VideoPlayerContent,
-  VideoPlayerControlBar,
-  VideoPlayerPlayButton,
-  VideoPlayerMuteButton,
-  VideoPlayerTimeDisplay,
-  VideoPlayerTimeRange,
-  VideoPlayerVolumeRange
-} from "@/components/ui/video-player";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ArrowLeft, Play, Pause, RotateCcw, Download, Share2, Volume2, VolumeX, Edit, AlertCircle, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { videoApiService, VideoGenerationRequest, VideoPreviewResponse } from "@/lib/videoApi";
 import { Chapter } from "@/lib/api";
 import { ImageUploadResponse } from "@/lib/imageApi";
 import { ImageAnalysisResponse } from "@/lib/imageAnalysisApi";
+import { Voice, audioNarrationService } from "@/lib/audioApi";
 
 interface PreviewVideoProps {
   onApprove: () => void;
@@ -64,7 +65,7 @@ interface PreviewVideoProps {
   theme?: string;
   audio?: {
     music: string;
-    voice: string;
+    voice: Voice | null;
     subtitles: boolean;
   };
 }
@@ -76,7 +77,7 @@ export default function PreviewVideo({
   uploadedImages, 
   imageAnalysis, 
   theme = "Classic Black & White", 
-  audio = { music: "Gentle Piano Memories", voice: "Sarah (Female, American)", subtitles: true }
+  audio = { music: "Gentle Piano Memories", voice: null, subtitles: true }
 }: PreviewVideoProps) {
   // Video player state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -92,6 +93,16 @@ export default function PreviewVideo({
   const [videoData, setVideoData] = useState<VideoPreviewResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  
+  // Audio narration state
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [audioData, setAudioData] = useState<any>(null);
+  const [audioError, setAudioError] = useState<string | null>(null);
+  
+  // Audio failure dialog state
+  const [showAudioFailureDialog, setShowAudioFailureDialog] = useState(false);
+  const [audioFailureError, setAudioFailureError] = useState<string>('');
+  const [shouldStopGeneration, setShouldStopGeneration] = useState(false);
 
   /**
    * Load authenticated video URL for playback
@@ -111,36 +122,168 @@ export default function PreviewVideo({
   };
 
   /**
-   * Map chapters to images based on image analysis and story content
-   * This creates the chapter-image mapping required by the backend
+   * Generate audio narration if voice is selected
    */
-  const mapChaptersToImages = (): VideoGenerationRequest => {
-    console.log('🎬 PreviewVideo: Mapping chapters to images...');
-    
-    // Distribute images across chapters
-    const imagesPerChapter = Math.ceil(uploadedImages.length / Math.max(chapters.length, 1));
-    
-    const mappings = chapters.map((chapter, index) => {
-      const startIdx = index * imagesPerChapter;
-      const endIdx = Math.min(startIdx + imagesPerChapter, uploadedImages.length);
-      const chapterImages = uploadedImages.slice(startIdx, endIdx);
-      
-      // Calculate duration per image in milliseconds (minimum 10 seconds per image)
-      const baseDurationPerImage = Math.max(10000, Math.ceil(chapter.script.length / 15) * 1000); // 15 chars per second, converted to ms
-      const durationPerImage = chapterImages.length > 0 ? Math.floor(baseDurationPerImage / chapterImages.length) : 10000;
-      
-      return {
-        chapter_title: chapter.title,
-        chapter_index: index + 1,
-        images: chapterImages.map(img => ({
-          img_id: img.id,
-          duration: durationPerImage
-        })),
-        script: chapter.script
-      };
-    });
+  const generateAudioNarration = async (): Promise<any> => {
+    if (!audio.voice) {
+      console.log('🎵 PreviewVideo: No voice selected, skipping audio generation');
+      return null;
+    }
 
-    return { mappings };
+    try {
+      setIsGeneratingAudio(true);
+      setAudioError(null);
+      
+      console.log('🎵 PreviewVideo: Starting audio narration generation...');
+      
+      // Prepare audio generation request
+      const audioRequest = {
+        mappings: chapters.map((chapter, index) => {
+          const startIdx = index * Math.ceil(uploadedImages.length / Math.max(chapters.length, 1));
+          const endIdx = Math.min(startIdx + Math.ceil(uploadedImages.length / Math.max(chapters.length, 1)), uploadedImages.length);
+          const chapterImages = uploadedImages.slice(startIdx, endIdx);
+          
+          return {
+            chapter_title: chapter.title,
+            chapter_index: index + 1,
+            script: chapter.script,
+            images: chapterImages.map(img => ({
+              img_id: img.id,
+              duration: Math.max(10000, Math.ceil(chapter.script.length / 15) * 1000)
+            }))
+          };
+        }),
+        voice_config: {
+          voice_name: audio.voice.name,
+          rate: "-10%",
+          pitch: "+0Hz", 
+          volume: "+0%",
+          style: "documentary"
+        },
+        subtitle_format: audio.subtitles ? "vtt" as const : undefined,
+        merge_audio: true,
+        max_segment_length: 200,
+        distribute_by_images: true
+      };
+
+      console.log('🎵 PreviewVideo: Audio request:', JSON.stringify(audioRequest, null, 2));
+      
+      const audioResponse = await audioNarrationService.generateAudio(audioRequest);
+      console.log('🎵 PreviewVideo: Audio generated successfully:', audioResponse);
+      
+      setAudioData(audioResponse);
+      setIsGeneratingAudio(false);
+      
+      return audioResponse; // Return full response instead of just file path
+    } catch (error) {
+      console.error('❌ PreviewVideo: Audio generation failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate audio narration';
+      setAudioError(errorMessage);
+      setIsGeneratingAudio(false);
+      
+      // Show dialog to user for retry or continue without audio
+      setAudioFailureError(errorMessage);
+      setShouldStopGeneration(true);
+      
+      // Use setTimeout to ensure state update happens in next tick
+      setTimeout(() => {
+        setShowAudioFailureDialog(true);
+      }, 0);
+      
+      // Return null to indicate failure, let dialog handle next action
+      return null;
+    }
+  };
+
+  /**
+   * Handle retry audio generation from dialog
+   */
+  const handleRetryAudio = async () => {
+    setShowAudioFailureDialog(false);
+    setAudioFailureError('');
+    setShouldStopGeneration(false);
+    
+    // Retry audio generation
+    const audioResponse = await generateAudioNarration();
+    if (audioResponse) {
+      // If successful, continue with video generation that was interrupted
+      continueVideoGeneration(audioResponse);
+    }
+    // If it fails again, the dialog will show again automatically
+  };
+
+  /**
+   * Handle continue without audio from dialog
+   */
+  const handleContinueWithoutAudio = () => {
+    setShowAudioFailureDialog(false);
+    setAudioFailureError('');
+    setShouldStopGeneration(false);
+    setAudioData(null); // Clear any partial audio data
+    
+    // Continue with video generation without audio
+    continueVideoGeneration(null);
+  };
+
+  /**
+   * Continue video generation (with or without audio)
+   */
+  const continueVideoGeneration = async (audioResponse = null) => {
+    try {
+      setGenerationProgress(25);
+      
+      // Prepare mappings
+      const mappings = chapters.map((chapter, index) => {
+        const startIdx = index * Math.ceil(uploadedImages.length / Math.max(chapters.length, 1));
+        const endIdx = Math.min(startIdx + Math.ceil(uploadedImages.length / Math.max(chapters.length, 1)), uploadedImages.length);
+        const chapterImages = uploadedImages.slice(startIdx, endIdx);
+        
+        const baseDurationPerImage = Math.max(10000, Math.ceil(chapter.script.length / 15) * 1000);
+        const durationPerImage = chapterImages.length > 0 ? Math.floor(baseDurationPerImage / chapterImages.length) : 10000;
+        
+        return {
+          chapter_title: chapter.title,
+          chapter_index: index + 1,
+          images: chapterImages.map(img => ({
+            img_id: img.id,
+            duration: durationPerImage
+          })),
+          script: chapter.script
+        };
+      });
+
+      setGenerationProgress(40);
+
+      // Use provided audioResponse or fallback to state
+      const currentAudioData = audioResponse || audioData;
+      
+      console.log('🎬 PreviewVideo: Audio data for video generation:', currentAudioData);
+
+      // Generate video with unified request (with or without narration)
+      const videoRequest: VideoGenerationRequest = {
+        mappings,
+        // Add audio parameters if available
+        ...(currentAudioData && currentAudioData.audio_file_path && {
+          audio_narration_file: currentAudioData.audio_file_path,
+          subtitle_file: currentAudioData.subtitle_file_path,
+          bgm_file: "media/bgm.mp3",
+          bgm_volume: 0.15,
+          narration_volume: 0.85,
+          enable_audio_ducking: true
+        })
+      };
+      
+      console.log('🎬 PreviewVideo: Generating video with unified request:', videoRequest);
+      const response = await videoApiService.generatePreview(videoRequest);
+      
+      setVideoData(response);
+      setIsGenerating(false);
+      setGenerationProgress(100);
+    } catch (error) {
+      console.error('❌ PreviewVideo: Video generation failed:', error);
+      setError(error instanceof Error ? error.message : 'Video generation failed');
+      setIsGenerating(false);
+    }
   };
 
   /**
@@ -167,89 +310,30 @@ export default function PreviewVideo({
         setError(null);
         setGenerationProgress(0);
 
-        console.log('🎬 PreviewVideo: Starting video generation...');
+        console.log('🎬 PreviewVideo: Starting content generation...');
         console.log('🎬 PreviewVideo: Using auth token:', token.substring(0, 20) + '...');
 
-        // Prepare video generation request
-        const request = mapChaptersToImages();
-        console.log('🎬 PreviewVideo: Starting video generation with request:', JSON.stringify(request, null, 2));
-        console.log('🎬 PreviewVideo: Using auth token:', token.substring(0, 20) + '...');
-
-        // Call backend API to generate video preview
-        const response = await videoApiService.generatePreview(request);
-        console.log('🎬 PreviewVideo: Video generation response:', response);
-        setVideoData(response);
-
-        // Check if video was generated successfully
-        if (response.video_preview_path && response.status === 'success') {
-          // Video generated successfully
-          setIsGenerating(false);
-          setGenerationProgress(100);
-          console.log('✅ PreviewVideo: Video generated successfully!', response.video_preview_path);
+        // Step 1: Generate audio narration if voice is selected (25% progress)
+        let audioResponse = null;
+        if (audio.voice) {
+          setGenerationProgress(5);
+          console.log('🎵 PreviewVideo: Generating audio narration first...');
+          audioResponse = await generateAudioNarration();
+          setGenerationProgress(25);
           
-          // Load authenticated video URL
-          loadVideoUrl(response.video_preview_path);
-        } else if (response.status === 'generating') {
-          // If video is still generating, poll for status
-          pollGenerationStatus(response.generation_id);
-        } else if (response.status === 'completed') {
-          setIsGenerating(false);
-          setGenerationProgress(100);
-        } else if (response.status === 'failed') {
-          throw new Error('Video generation failed on server');
-        }
-
-      } catch (error) {
-        console.error('❌ PreviewVideo: Video generation failed:', error);
-        
-        let errorMessage = 'Failed to generate video preview';
-        if (error instanceof Error) {
-          if (error.message.includes('Authentication required') || error.message.includes('Please log in')) {
-            errorMessage = 'Please log in to generate video preview';
-          } else if (error.message.includes('Failed to fetch')) {
-            errorMessage = 'Cannot connect to video generation service. Please check if the backend is running.';
-          } else if (error.message.includes('404')) {
-            errorMessage = 'Video generation service is not available yet. This feature is still in development.';
-          } else if (error.message.includes('422')) {
-            errorMessage = 'Invalid request format. Please try again or contact support.';
-          } else if (error.message.includes('401')) {
-            errorMessage = 'Video generation endpoint requires different authentication. This feature may not be fully implemented yet.';
-          } else if (error.message.includes('405')) {
-            errorMessage = 'Video generation endpoint exists but is not properly configured. Please contact the development team.';
-          } else {
-            errorMessage = error.message;
+          // If audio generation failed (returned null), the dialog will be shown
+          // and the dialog handlers will continue the process
+          if (!audioResponse || shouldStopGeneration) {
+            return;
           }
         }
-        
-        // For now, if video generation fails, show a placeholder/demo mode
-        if (error instanceof Error && (
-          error.message.includes('401') || 
-          error.message.includes('404') || 
-          error.message.includes('405') ||
-          error.message.includes('Video generation service is not available')
-        )) {
-          console.log('🎬 PreviewVideo: Falling back to demo mode due to backend limitations');
-          setError(null);
-          setIsGenerating(false);
-          setGenerationProgress(100);
-          
-          // Set demo video data
-          setVideoData({
-            video_preview_path: '', // Empty path triggers placeholder
-            generation_id: 'demo-preview',
-            status: 'completed',
-            created_at: new Date().toISOString(),
-            duration: Math.max(180, chapters.reduce((acc, ch) => acc + Math.ceil(ch.script.length / 15), 0)),
-            metadata: {
-              preview_watermark: true,
-              resolution: '1920x1080',
-              format: 'MP4'
-            }
-          });
-          return;
-        }
-        
-        setError(errorMessage);
+
+        // Continue with video generation, passing audio response
+        await continueVideoGeneration(audioResponse);
+
+      } catch (error) {
+        console.error('❌ PreviewVideo: Initial generation failed:', error);
+        setError(error instanceof Error ? error.message : 'Video generation failed');
         setIsGenerating(false);
       }
     };
@@ -343,8 +427,50 @@ export default function PreviewVideo({
     // Re-trigger the effect by updating state
     const generateVideo = async () => {
       try {
-        const request = mapChaptersToImages();
-        const response = await videoApiService.generatePreview(request);
+        // Regenerate audio if voice was selected
+        let audioResponse = null;
+        if (audio.voice) {
+          console.log('🎵 PreviewVideo: Regenerating audio narration...');
+          audioResponse = await generateAudioNarration();
+        }
+
+        // Prepare mappings
+        const mappings = chapters.map((chapter, index) => {
+          const startIdx = index * Math.ceil(uploadedImages.length / Math.max(chapters.length, 1));
+          const endIdx = Math.min(startIdx + Math.ceil(uploadedImages.length / Math.max(chapters.length, 1)), uploadedImages.length);
+          const chapterImages = uploadedImages.slice(startIdx, endIdx);
+          
+          const baseDurationPerImage = Math.max(10000, Math.ceil(chapter.script.length / 15) * 1000);
+          const durationPerImage = chapterImages.length > 0 ? Math.floor(baseDurationPerImage / chapterImages.length) : 10000;
+          
+          return {
+            chapter_title: chapter.title,
+            chapter_index: index + 1,
+            images: chapterImages.map(img => ({
+              img_id: img.id,
+              duration: durationPerImage
+            })),
+            script: chapter.script
+          };
+        });
+
+        // Generate video with unified request (with or without narration)
+        const videoRequest: VideoGenerationRequest = {
+          mappings,
+          // Add audio parameters if available
+          ...(audioResponse && audioResponse.audio_file_path && {
+            audio_narration_file: audioResponse.audio_file_path,
+            subtitle_file: audioResponse.subtitle_file_path,
+            bgm_file: "media/bgm.mp3",
+            bgm_volume: 0.15,
+            narration_volume: 0.85,
+            enable_audio_ducking: true
+          })
+        };
+        
+        console.log('🎬 PreviewVideo: Retry generating video with unified request:', videoRequest);
+        const response = await videoApiService.generatePreview(videoRequest);
+        
         setVideoData(response);
 
         if (response.status === 'generating') {
@@ -486,13 +612,15 @@ export default function PreviewVideo({
             </div>
             <h3 className="text-2xl font-semibold text-foreground">Creating Your Memory Video</h3>
             <p className="text-muted-foreground">
-              We're weaving your {uploadedImages.length} photos and {chapters.length} story chapters together with beautiful transitions and music...
+              We're weaving your {uploadedImages.length} photos and {chapters.length} story chapters together with beautiful transitions{audio.voice ? ', narration,' : ''} and music...
             </p>
             <Progress value={generationProgress} className="h-3" />
             <p className="text-sm text-muted-foreground">
-              {generationProgress < 30 && "Analyzing your photos and story structure..."}
-              {generationProgress >= 30 && generationProgress < 60 && "Generating video scenes and transitions..."}
-              {generationProgress >= 60 && generationProgress < 90 && "Adding music and finalizing video..."}
+              {generationProgress < 5 && "Preparing content generation..."}
+              {generationProgress >= 5 && generationProgress < 25 && audio.voice && "Generating voice narration with AI..."}
+              {generationProgress >= 25 && generationProgress < 40 && "Analyzing your photos and story structure..."}
+              {generationProgress >= 40 && generationProgress < 70 && "Generating video scenes and transitions..."}
+              {generationProgress >= 70 && generationProgress < 90 && "Adding music and finalizing video..."}
               {generationProgress >= 90 && "Almost ready! Final processing..."}
             </p>
           </div>
@@ -563,32 +691,26 @@ export default function PreviewVideo({
         {/* Video Player */}
         <Card className="p-8 mb-8 bg-white/95 backdrop-blur-sm border-0 shadow-card">
           <div className="aspect-video bg-gradient-to-br from-gray-900 via-gray-600 to-gray-300 rounded-lg overflow-hidden relative group">
-            {/* Actual Video Element with media-chrome VideoPlayer */}
+            {/* Simple HTML5 Video Player - iPhone Compatible */}
             {videoData?.video_preview_path && videoUrl ? (
-              <VideoPlayer className="w-full h-full">
-                <VideoPlayerContent
-                  ref={videoRef}
-                  className="w-full h-full object-cover"
-                  onLoadedMetadata={handleVideoLoadedMetadata}
-                  onTimeUpdate={handleVideoTimeUpdate}
-                  onEnded={handleVideoEnded}
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
-                  muted={isMuted}
-                  preload="metadata"
-                  style={{ 
-                    filter: 'contrast(1.1) saturate(1.2)',
-                  }}
-                  src={videoUrl}
-                />
-                <VideoPlayerControlBar>
-                  <VideoPlayerPlayButton />
-                  <VideoPlayerTimeRange />
-                  <VideoPlayerTimeDisplay />
-                  <VideoPlayerMuteButton />
-                  <VideoPlayerVolumeRange />
-                </VideoPlayerControlBar>
-              </VideoPlayer>
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                controls
+                controlsList="nodownload"
+                preload="metadata"
+                playsInline
+                webkit-playsinline="true"
+                style={{ 
+                  filter: 'contrast(1.1) saturate(1.2)',
+                }}
+                src={videoUrl}
+                onLoadedMetadata={handleVideoLoadedMetadata}
+                onTimeUpdate={handleVideoTimeUpdate}
+                onEnded={handleVideoEnded}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+              />
             ) : (
               /* Fallback Preview Placeholder */
               <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
@@ -635,7 +757,17 @@ export default function PreviewVideo({
             <h3 className="text-lg font-semibold text-foreground mb-3">Audio & Narration</h3>
             <div className="space-y-2 text-sm text-muted-foreground">
               <p>Music: {audio.music}</p>
-              <p>Voice: {audio.voice}</p>
+              <p>Voice: {audio.voice ? `${audio.voice.display_name} (${audio.voice.locale})` : 'No voice selected'}</p>
+              {audioData && (
+                <>
+                  <p>Audio Duration: {Math.round(audioData.audio_duration)}s</p>
+                  <p>Segments: {audioData.total_segments}</p>
+                  <p>Processing Time: {Math.round(audioData.processing_time)}s</p>
+                </>
+              )}
+              {audioError && (
+                <p className="text-red-500">Audio Error: {audioError}</p>
+              )}
               <p>Subtitles: {audio.subtitles ? "Enabled" : "Disabled"}</p>
               <p>Quality: High Definition</p>
             </div>
@@ -706,6 +838,36 @@ export default function PreviewVideo({
           </p>
         </Card>
       </div>
+
+      {/* Audio Failure Dialog */}
+      <AlertDialog open={showAudioFailureDialog} onOpenChange={setShowAudioFailureDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-500" />
+              Audio Generation Failed
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              We encountered an issue while generating the audio narration for your video:
+              <div className="mt-2 p-3 bg-muted rounded-md text-sm font-mono">
+                {audioFailureError}
+              </div>
+              <div className="mt-3">
+                You can either retry the audio generation or continue creating your video without narration.
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleContinueWithoutAudio}>
+              Continue Without Audio
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleRetryAudio} className="bg-primary hover:bg-primary/90">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Retry Audio Generation
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

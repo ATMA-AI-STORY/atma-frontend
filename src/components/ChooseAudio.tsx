@@ -3,9 +3,11 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, ArrowRight, Play, Pause, Volume2, User } from "lucide-react";
 import { useState } from "react";
+import { VoiceSelectionDropdown } from "./VoiceSelectionDropdown";
+import { Voice } from "@/lib/audioApi";
 
 interface ChooseAudioProps {
-  onNext: (audio: { music: string; voice: string; subtitles: boolean }) => void;
+  onNext: (audio: { music: string; voice: Voice | null; subtitles: boolean }) => void;
   onBack: () => void;
 }
 
@@ -16,17 +18,9 @@ interface MusicTrack {
   duration: string;
 }
 
-interface Voice {
-  id: string;
-  name: string;
-  gender: string;
-  accent: string;
-  sample: string;
-}
-
 export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
   const [selectedMusic, setSelectedMusic] = useState<string>('cinematic-default');
-  const [selectedVoice, setSelectedVoice] = useState<string>(''); // No voice selected since coming soon
+  const [selectedVoice, setSelectedVoice] = useState<Voice | null>(null);
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
   const [playingMusic, setPlayingMusic] = useState<string | null>(null);
 
@@ -39,13 +33,7 @@ export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
     { id: 'folk-guitar', name: 'Nostalgic Folk', mood: 'Nostalgic', duration: '3:56' }
   ];
 
-  const voices: Voice[] = [
-    { id: 'sarah-warm', name: 'Sarah', gender: 'Female', accent: 'American', sample: 'Coming soon - Warm and compassionate voice' },
-    { id: 'michael-narrator', name: 'Michael', gender: 'Male', accent: 'British', sample: 'Coming soon - Distinguished narrator voice' },
-    { id: 'emma-gentle', name: 'Emma', gender: 'Female', accent: 'Canadian', sample: 'Coming soon - Soft and nurturing voice' },
-    { id: 'david-wise', name: 'David', gender: 'Male', accent: 'American', sample: 'Coming soon - Wise and reflective voice' },
-    { id: 'maria-expressive', name: 'Maria', gender: 'Female', accent: 'Neutral', sample: 'Coming soon - Expressive and engaging voice' }
-  ];
+  // Legacy voices are no longer used - replaced by VoiceSelectionDropdown with real API data
 
   const toggleMusicPlay = (trackId: string) => {
     // Only allow playing the default track
@@ -132,25 +120,10 @@ export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
               Narrator Voice
             </h3>
             
-            <div className="space-y-4">
-              <Card className="p-6 bg-white/95 backdrop-blur-sm border-0 shadow-card">
-                <div className="text-center">
-                  <h4 className="text-lg font-semibold text-foreground mb-2">
-                    Voice Narration Coming Soon!
-                  </h4>
-                  <p className="text-muted-foreground mb-4">
-                    We're working on bringing you professional voice narration options. 
-                    For now, your video will be created with text and music.
-                  </p>
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      Future voices will include: Professional narrators, Multiple accents, 
-                      Emotional tone matching, and Custom voice options.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </div>
+            <VoiceSelectionDropdown
+              onVoiceSelect={setSelectedVoice}
+              selectedVoice={selectedVoice}
+            />
           </div>
         </div>
 
@@ -195,8 +168,8 @@ export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
             <h3 className="text-xl font-semibold mb-2">Audio Selection Summary</h3>
             <p className="text-white/90">
               Music: {musicTracks.find(t => t.id === selectedMusic)?.name} • 
-              Voice: Coming Soon • 
-              Subtitles: Enabled (Clean & Simple)
+              Voice: {selectedVoice ? `${selectedVoice.display_name} (${selectedVoice.locale})` : 'No voice selected'} • 
+              Subtitles: {subtitlesEnabled ? 'Enabled' : 'Disabled'} (Clean & Simple)
             </p>
           </div>
         </Card>
@@ -218,7 +191,7 @@ export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
             size="lg" 
             onClick={() => onNext({
               music: selectedMusic,
-              voice: 'none', // No voice selected yet
+              voice: selectedVoice, // Pass the selected voice object
               subtitles: subtitlesEnabled
             })}
             disabled={!canProceed}

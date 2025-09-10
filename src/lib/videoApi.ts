@@ -13,6 +13,13 @@ export interface VideoGenerationRequest {
     }>;
     script: string;
   }>;
+  // Optional audio narration parameters
+  audio_narration_file?: string;
+  subtitle_file?: string;
+  bgm_file?: string;
+  bgm_volume?: number;
+  narration_volume?: number;
+  enable_audio_ducking?: boolean;
 }
 
 export interface VideoPreviewResponse {

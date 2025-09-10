@@ -13,6 +13,7 @@ import { apiService, type Chapter } from "@/lib/api";
 import { ImageUploadResponse } from "@/lib/imageApi";
 import { imageAnalysisApiService, ImageAnalysisResponse } from "@/lib/imageAnalysisApi";
 import { videoApiService } from "@/lib/videoApi";
+import { Voice } from "@/lib/audioApi";
 import { useToast } from "@/hooks/use-toast";
 
 type Step = 'welcome' | 'upload' | 'story' | 'script' | 'theme' | 'audio' | 'preview' | 'final' | 'library';
@@ -27,7 +28,7 @@ interface VideoData {
   theme: string;
   audio: {
     music: string;
-    voice: string;
+    voice: Voice | null;
     subtitles: boolean;
   };
 }
@@ -43,7 +44,7 @@ const Index = () => {
     script: '',
     chapters: [],
     theme: '',
-    audio: { music: '', voice: '', subtitles: true }
+    audio: { music: '', voice: null, subtitles: true }
   });
   const { toast } = useToast();
 
@@ -57,7 +58,7 @@ const Index = () => {
       script: '', 
       chapters: [],
       theme: '', 
-      audio: { music: '', voice: '', subtitles: true } 
+      audio: { music: '', voice: null, subtitles: true } 
     });
     setIsProcessingImageAnalysis(false);
     setIsProcessingStory(false);
@@ -178,7 +179,7 @@ const Index = () => {
     setCurrentStep('audio');
   };
 
-  const handleAudioNext = (audio: { music: string; voice: string; subtitles: boolean }) => {
+  const handleAudioNext = (audio: { music: string; voice: Voice | null; subtitles: boolean }) => {
     setVideoData(prev => ({ ...prev, audio }));
     markStepCompleted('audio');
     setCurrentStep('preview');
@@ -198,7 +199,7 @@ const Index = () => {
       script: '', 
       chapters: [],
       theme: '', 
-      audio: { music: '', voice: '', subtitles: true } 
+      audio: { music: '', voice: null, subtitles: true } 
     });
     setIsProcessingImageAnalysis(false);
     setIsProcessingStory(false);

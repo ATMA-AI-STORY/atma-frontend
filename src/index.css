@@ -123,3 +123,23 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Media Chrome Styles */
+media-controller {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+media-control-bar {
+  display: flex !important;
+  align-items: center !important;
+}
+
+media-play-button,
+media-mute-button,
+media-time-display,
+media-time-range,
+media-volume-range {
+  display: block !important;
+}

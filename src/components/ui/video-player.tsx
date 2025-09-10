@@ -12,7 +12,9 @@ import {
 import type { ComponentProps, CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
-export type VideoPlayerProps = ComponentProps<typeof MediaController>;
+export type VideoPlayerProps = ComponentProps<typeof MediaController> & {
+  className?: string;
+};
 
 const variables = {
   "--media-primary-color": "var(--primary)",
@@ -26,10 +28,14 @@ const variables = {
   "--media-range-track-background": "var(--border)",
 } as CSSProperties;
 
-export const VideoPlayer = ({ style, ...props }: VideoPlayerProps) => (
+export const VideoPlayer = ({ style, className, ...props }: VideoPlayerProps) => (
   <MediaController
+    className={cn("block w-full h-full", className)}
     style={{
       ...variables,
+      display: 'block',
+      width: '100%',
+      height: '100%',
       ...style,
     }}
     {...props}
