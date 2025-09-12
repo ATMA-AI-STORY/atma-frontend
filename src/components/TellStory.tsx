@@ -16,6 +16,7 @@ interface TellStoryProps {
   onBack: () => void;
   isLoading?: boolean;
   initialStory?: string;
+  canProceed?: boolean;
 }
 
 export default function TellStory({
@@ -23,6 +24,7 @@ export default function TellStory({
   onBack,
   isLoading = false,
   initialStory = "",
+  canProceed = true,
 }: TellStoryProps) {
   const [story, setStory] = useState(initialStory);
   const [mode, setMode] = useState<"write" | "speak">("write");
@@ -38,7 +40,7 @@ export default function TellStory({
     "Hobbies and passions",
   ];
 
-  const canProceed = story.trim().length > 0 && !isLoading;
+  const hasValidStory = story.trim().length > 0 && !isLoading;
 
   return (
     <div className="min-h-screen bg-gradient-warm p-1 md:p-8">
@@ -194,7 +196,7 @@ export default function TellStory({
             variant="hero"
             size="lg"
             onClick={() => onNext(story)}
-            disabled={!canProceed}
+            disabled={!hasValidStory || !canProceed}
             className="flex items-center gap-2"
           >
             {isLoading ? (

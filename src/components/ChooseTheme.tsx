@@ -6,6 +6,7 @@ import { useState } from "react";
 interface ChooseThemeProps {
   onNext: (theme: string) => void;
   onBack: () => void;
+  canProceed?: boolean;
 }
 
 interface Theme {
@@ -16,7 +17,7 @@ interface Theme {
   style: string;
 }
 
-export default function ChooseTheme({ onNext, onBack }: ChooseThemeProps) {
+export default function ChooseTheme({ onNext, onBack, canProceed = true }: ChooseThemeProps) {
   const [selectedTheme, setSelectedTheme] = useState<string>('documentary');
 
   const themes: Theme[] = [
@@ -64,7 +65,7 @@ export default function ChooseTheme({ onNext, onBack }: ChooseThemeProps) {
     }
   ];
 
-  const canProceed = selectedTheme !== '';
+  const hasSelectedTheme = selectedTheme !== '';
 
   return (
     <div className="p-4 md:p-8">
@@ -183,7 +184,7 @@ export default function ChooseTheme({ onNext, onBack }: ChooseThemeProps) {
             variant="hero" 
             size="lg" 
             onClick={() => onNext(selectedTheme)}
-            disabled={!canProceed}
+            disabled={!hasSelectedTheme || !canProceed}
             className="flex items-center gap-2"
           >
             Continue

@@ -73,6 +73,70 @@ const Index = () => {
     setCompletedSteps(prev => new Set([...prev, step]));
   };
 
+  // Helper function to check if a step can proceed (previous step completed)
+  const canProceedFromStep = (step: CreationStep): boolean => {
+    const stepOrder: CreationStep[] = ['upload', 'story', 'script', 'theme', 'audio', 'preview', 'final'];
+    const currentIndex = stepOrder.indexOf(step);
+    
+    // First step (upload) can always proceed
+    if (currentIndex === 0) return true;
+    
+    // Check if previous step is completed
+    const previousStep = stepOrder[currentIndex - 1];
+    return completedSteps.has(previousStep);
+  };
+
+  // Helper function to get dummy data for components when steps aren't completed
+  const getDummyDataForStep = (step: CreationStep) => {
+    const dummyImages: ImageUploadResponse[] = [
+      { 
+        id: 'dummy-1', 
+        filename: 'family-photo.jpg',
+        original_filename: 'family-photo.jpg', 
+        file_size: 1024000,
+        mime_type: 'image/jpeg', 
+        processing_status: 'completed',
+        upload_url: '', 
+        metadata: {} 
+      },
+      { 
+        id: 'dummy-2', 
+        filename: 'vacation.jpg',
+        original_filename: 'vacation.jpg', 
+        file_size: 2048000,
+        mime_type: 'image/jpeg', 
+        processing_status: 'completed',
+        upload_url: '', 
+        metadata: {} 
+      },
+      { 
+        id: 'dummy-3', 
+        filename: 'graduation.jpg',
+        original_filename: 'graduation.jpg', 
+        file_size: 1536000,
+        mime_type: 'image/jpeg', 
+        processing_status: 'completed',
+        upload_url: '', 
+        metadata: {} 
+      }
+    ];
+
+    const dummyChapters: Chapter[] = [
+      { title: 'Chapter 1: Early Days', script: 'This is where your story begins. Share your earliest memories and formative experiences.' },
+      { title: 'Chapter 2: Growing Years', script: 'The journey continues with your growth and development through different life stages.' },
+      { title: 'Chapter 3: Life Milestones', script: 'Important achievements and milestones that shaped who you are today.' }
+    ];
+
+    return {
+      uploadedImages: step === 'upload' || !canProceedFromStep(step) ? dummyImages : videoData.uploadedImages,
+      story: step === 'story' || !canProceedFromStep(step) ? 'Tell us about your life journey, key moments, and cherished memories...' : videoData.story,
+      chapters: step === 'script' || !canProceedFromStep(step) ? dummyChapters : videoData.chapters,
+      script: step === 'script' || !canProceedFromStep(step) ? dummyChapters.map(c => c.script).join(' ') : videoData.script,
+      theme: step === 'theme' || !canProceedFromStep(step) ? 'documentary' : videoData.theme,
+      audio: step === 'audio' || !canProceedFromStep(step) ? { music: 'cinematic-default', voice: null, subtitles: true } : videoData.audio
+    };
+  };
+
   const handleBack = () => {
     const stepFlow: Step[] = ['welcome', 'upload', 'story', 'script', 'theme', 'audio', 'preview', 'final'];
     const currentIndex = stepFlow.indexOf(currentStep);
@@ -225,33 +289,39 @@ const Index = () => {
             case 'welcome':
               return <Welcome onCreateNew={handleCreateNew} onViewPast={handleViewPast} />;
             case 'upload':
-              return <UploadPhotos onNext={handleUploadNext} onBack={handleBack} initialImages={videoData.uploadedImages} />;
+              const uploadData = getDummyDataForStep('upload');
+              return <UploadPhotos onNext={handleUploadNext} onBack={handleBack} initialImages={uploadData.uploadedImages} canProceed={canProceedFromStep('upload')} />;
             case 'story':
-              return <TellStory onNext={handleStoryNext} onBack={handleBack} isLoading={isProcessingStory} initialStory={videoData.story} />;
+              const storyData = getDummyDataForStep('story');
+              return <TellStory onNext={handleStoryNext} onBack={handleBack} isLoading={isProcessingStory} initialStory={storyData.story} canProceed={canProceedFromStep('story')} />;
             case 'script':
+              const scriptData = getDummyDataForStep('script');
               return <ApproveScript 
-                chapters={videoData.chapters} 
+                chapters={scriptData.chapters} 
                 imageAnalysis={videoData.imageAnalysis}
                 isProcessingImageAnalysis={isProcessingImageAnalysis}
                 onNext={handleScriptNext} 
                 onBack={handleBack} 
+                canProceed={canProceedFromStep('script')}
               />;
             case 'theme':
-              return <ChooseTheme onNext={handleThemeNext} onBack={handleBack} />;
+              return <ChooseTheme onNext={handleThemeNext} onBack={handleBack} canProceed={canProceedFromStep('theme')} />;
             case 'audio':
-              return <ChooseAudio onNext={handleAudioNext} onBack={handleBack} />;
+              return <ChooseAudio onNext={handleAudioNext} onBack={handleBack} canProceed={canProceedFromStep('audio')} />;
             case 'preview':
+              const previewData = getDummyDataForStep('preview');
               return <PreviewVideo 
                 onApprove={handlePreviewApprove} 
                 onBack={handleBack} 
-                chapters={videoData.chapters}
-                uploadedImages={videoData.uploadedImages}
+                chapters={previewData.chapters}
+                uploadedImages={previewData.uploadedImages}
                 imageAnalysis={videoData.imageAnalysis}
-                theme={videoData.theme}
-                audio={videoData.audio}
+                theme={previewData.theme}
+                audio={previewData.audio}
+                canProceed={canProceedFromStep('preview')}
               />;
             case 'final':
-              return <FinalDelivery onStartOver={handleStartOver} />;
+              return <FinalDelivery onStartOver={handleStartOver} canProceed={canProceedFromStep('final')} />;
             case 'library':
               return <VideoLibrary onBack={() => setCurrentStep('welcome')} onCreateNew={handleCreateNew} />;
             default:

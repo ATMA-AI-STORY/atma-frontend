@@ -9,6 +9,7 @@ import { Voice } from "@/lib/audioApi";
 interface ChooseAudioProps {
   onNext: (audio: { music: string; voice: Voice | null; subtitles: boolean }) => void;
   onBack: () => void;
+  canProceed?: boolean;
 }
 
 interface MusicTrack {
@@ -18,7 +19,7 @@ interface MusicTrack {
   duration: string;
 }
 
-export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
+export default function ChooseAudio({ onNext, onBack, canProceed = true }: ChooseAudioProps) {
   const [selectedMusic, setSelectedMusic] = useState<string>('cinematic-default');
   const [selectedVoice, setSelectedVoice] = useState<Voice | null>(null);
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
@@ -42,7 +43,7 @@ export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
     }
   };
 
-  const canProceed = selectedMusic === 'cinematic-default'; // Only proceed with default music
+  const hasValidMusic = selectedMusic === 'cinematic-default'; // Only proceed with default music
 
   return (
     <div className="p-4 md:p-8">
@@ -194,7 +195,7 @@ export default function ChooseAudio({ onNext, onBack }: ChooseAudioProps) {
               voice: selectedVoice, // Pass the selected voice object
               subtitles: subtitlesEnabled
             })}
-            disabled={!canProceed}
+            disabled={!hasValidMusic || !canProceed}
             className="flex items-center gap-2"
           >
             Continue

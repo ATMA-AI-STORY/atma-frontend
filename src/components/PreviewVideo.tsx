@@ -68,6 +68,7 @@ interface PreviewVideoProps {
     voice: Voice | null;
     subtitles: boolean;
   };
+  canProceed?: boolean;
 }
 
 export default function PreviewVideo({ 
@@ -77,7 +78,8 @@ export default function PreviewVideo({
   uploadedImages, 
   imageAnalysis, 
   theme = "Classic Black & White", 
-  audio = { music: "Gentle Piano Memories", voice: null, subtitles: true }
+  audio = { music: "Gentle Piano Memories", voice: null, subtitles: true },
+  canProceed = true
 }: PreviewVideoProps) {
   // Video player state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -291,6 +293,24 @@ export default function PreviewVideo({
    */
   useEffect(() => {
     const generateVideo = async () => {
+      // If user navigated directly without completing previous steps, show dummy preview
+      if (!canProceed) {
+        setIsGenerating(false);
+        setVideoData({
+          generation_id: 'demo-preview',
+          video_preview_path: '',
+          status: 'completed',
+          duration: 180,
+          created_at: new Date().toISOString(),
+          metadata: {
+            preview_watermark: true,
+            resolution: '1080p',
+            format: 'mp4'
+          }
+        });
+        return;
+      }
+
       // Check authentication
       const token = localStorage.getItem('access_token');
       if (!token) {
@@ -692,7 +712,8 @@ export default function PreviewVideo({
         <Card className="p-8 mb-8 bg-white/95 backdrop-blur-sm border-0 shadow-card">
           <div className="aspect-video bg-gradient-to-br from-gray-900 via-gray-600 to-gray-300 rounded-lg overflow-hidden relative group">
             {/* Simple HTML5 Video Player - iPhone Compatible */}
-            {videoData?.video_preview_path && videoUrl ? (
+            {videoData?.video_preview_path && videoUrl && canProceed ? (
+              /* Real Video Player - Only shown when video is available and steps completed */
               <video
                 ref={videoRef}
                 className="w-full h-full object-cover"
@@ -711,23 +732,43 @@ export default function PreviewVideo({
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
               />
-            ) : (
-              /* Fallback Preview Placeholder */
+            ) : canProceed ? (
+              /* Loading/Placeholder when steps completed but video not ready */
               <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                 <div className="text-center text-white space-y-4">
                   <div className="text-6xl font-light">🎬</div>
                   <p className="text-xl">Memory Video Preview</p>
                   <p className="text-sm opacity-75">{theme}</p>
                   <div className="bg-blue-500/80 px-3 py-1 rounded-full text-xs font-semibold">
-                    DEMO MODE
+                    GENERATING
                   </div>
                   <p className="text-xs opacity-60 max-w-md">
-                    Video generation service is being developed. This shows how your final video will look.
+                    Your video is being generated with your photos and story.
                   </p>
                   <div className="space-y-1 text-xs opacity-75">
                     <p>📸 {uploadedImages.length} Photos</p>
                     <p>📖 {chapters.length} Chapters</p>
                     <p>🎵 {audio.music}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Dummy Preview when user navigates directly without completing steps */
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                <div className="text-center text-white space-y-4">
+                  <div className="text-6xl font-light">⏳</div>
+                  <p className="text-xl">Preview Not Available</p>
+                  <p className="text-sm opacity-75">Complete previous steps first</p>
+                  <div className="bg-yellow-500/80 px-3 py-1 rounded-full text-xs font-semibold">
+                    STEPS REQUIRED
+                  </div>
+                  <p className="text-xs opacity-60 max-w-md">
+                    Please complete the upload, story, script, theme, and audio steps to generate your video preview.
+                  </p>
+                  <div className="space-y-1 text-xs opacity-75">
+                    <p>📸 Upload photos first</p>
+                    <p>📖 Tell your story</p>
+                    <p>🎵 Choose audio settings</p>
                   </div>
                 </div>
               </div>
@@ -816,7 +857,7 @@ export default function PreviewVideo({
             variant="hero" 
             size="lg" 
             onClick={onApprove}
-            disabled={!videoData || (videoData.status !== 'completed' && videoData.generation_id !== 'demo-preview')}
+            disabled={!videoData || (videoData.status !== 'completed' && videoData.generation_id !== 'demo-preview') || !canProceed}
             className="flex items-center gap-2 flex-1"
           >
             <Download className="w-5 h-5" />

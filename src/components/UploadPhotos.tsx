@@ -25,9 +25,10 @@ interface UploadPhotosProps {
   onNext: (uploadedImages: ImageUploadResponse[]) => void | Promise<void>;
   onBack: () => void;
   initialImages?: ImageUploadResponse[];
+  canProceed?: boolean;
 }
 
-export default function UploadPhotos({ onNext, onBack, initialImages = [] }: UploadPhotosProps) {
+export default function UploadPhotos({ onNext, onBack, initialImages = [], canProceed = true }: UploadPhotosProps) {
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -288,7 +289,7 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [] }: Upl
     }
   };
 
-  const canProceed = (images.length > 0 && images.some(img => img.uploadStatus === 'completed')) && !isUploading;
+  const hasValidImages = (images.length > 0 && images.some(img => img.uploadStatus === 'completed')) && !isUploading;
 
   return (
     <div className="min-h-screen bg-gradient-warm p-4 md:p-8">
@@ -477,7 +478,7 @@ export default function UploadPhotos({ onNext, onBack, initialImages = [] }: Upl
             variant="hero"
             size="lg"
             onClick={() => onNext(getCompletedUploads())}
-            disabled={!canProceed}
+            disabled={!hasValidImages || !canProceed}
             className="flex items-center gap-2"
           >
             Continue

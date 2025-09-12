@@ -11,9 +11,10 @@ interface ApproveScriptProps {
   isProcessingImageAnalysis?: boolean;
   onNext: (script: string) => void;
   onBack: () => void;
+  canProceed?: boolean;
 }
 
-export default function ApproveScript({ chapters, imageAnalysis, isProcessingImageAnalysis = false, onNext, onBack }: ApproveScriptProps) {
+export default function ApproveScript({ chapters, imageAnalysis, isProcessingImageAnalysis = false, onNext, onBack, canProceed = true }: ApproveScriptProps) {
   // Use chapters from props, with fallback to empty array
   const [script, setScript] = useState<Chapter[]>(() => {
     // If chapters are provided, use them; otherwise create default structure
@@ -195,6 +196,7 @@ export default function ApproveScript({ chapters, imageAnalysis, isProcessingIma
     variant="hero" 
     size="default" 
     onClick={() => onNext(script.map(s => s.script).join(' '))}
+    disabled={!canProceed}
     className="flex items-center gap-2 
                text-xs px-3 py-2   /* mobile */
                sm:text-sm sm:px-4 sm:py-2   /* small screens */

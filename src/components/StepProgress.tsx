@@ -64,11 +64,9 @@ export default function StepProgress({ currentStep, completedSteps, onStepClick 
             const currentStepIndex = stepConfig.findIndex(s => s.key === currentStep);
             const stepIndex = index;
             
-            // Allow clicking only on:
-            // 1. Completed steps (can go back)
-            // 2. Current step
-            // 3. Next step if current is completed (but this is handled in parent)
-            const isClickable = isCompleted || isCurrent || (stepIndex < currentStepIndex);
+            // Allow clicking on any step - user can navigate freely
+            // Completion tracking remains, but navigation is unrestricted
+            const isClickable = true;
             
             const Icon = step.icon;
 

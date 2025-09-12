@@ -6,9 +6,10 @@ import { useState, useEffect } from "react";
 
 interface FinalDeliveryProps {
   onStartOver: () => void;
+  canProceed?: boolean;
 }
 
-export default function FinalDelivery({ onStartOver }: FinalDeliveryProps) {
+export default function FinalDelivery({ onStartOver, canProceed = true }: FinalDeliveryProps) {
   const [isProcessing, setIsProcessing] = useState(true);
   const [progress, setProgress] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
