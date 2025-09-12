@@ -128,7 +128,7 @@ const Index = () => {
     ];
 
     return {
-      uploadedImages: step === 'upload' || !canProceedFromStep(step) ? dummyImages : videoData.uploadedImages,
+      uploadedImages: step === 'upload' ? videoData.uploadedImages : (!canProceedFromStep(step) ? [] : videoData.uploadedImages),
       story: step === 'story' || !canProceedFromStep(step) ? 'Tell us about your life journey, key moments, and cherished memories...' : videoData.story,
       chapters: step === 'script' || !canProceedFromStep(step) ? dummyChapters : videoData.chapters,
       script: step === 'script' || !canProceedFromStep(step) ? dummyChapters.map(c => c.script).join(' ') : videoData.script,
