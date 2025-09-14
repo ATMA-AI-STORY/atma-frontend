@@ -285,6 +285,11 @@ export default function PreviewVideo({
       setVideoData(response);
       setIsGenerating(false);
       setGenerationProgress(100);
+      
+      // Load video URL if available
+      if (response.video_preview_path) {
+        loadVideoUrl(response.video_preview_path);
+      }
     } catch (error) {
       console.error('❌ PreviewVideo: Video generation failed:', error);
       setError(error instanceof Error ? error.message : 'Video generation failed');
@@ -715,9 +720,8 @@ export default function PreviewVideo({
         {/* Video Player */}
         <Card className="p-8 mb-8 bg-white/95 backdrop-blur-sm border-0 shadow-card">
           <div className="aspect-video bg-gradient-to-br from-gray-900 via-gray-600 to-gray-300 rounded-lg overflow-hidden relative group">
-            {/* Simple HTML5 Video Player - iPhone Compatible */}
-            {videoData?.video_preview_path && videoUrl && canProceed ? (
-              /* Real Video Player - Only shown when video is available and steps completed */
+            {/* Video Player - Show video when URL is available */}
+            {videoUrl ? (
               <video
                 ref={videoRef}
                 className="w-full h-full object-cover"
@@ -726,9 +730,6 @@ export default function PreviewVideo({
                 preload="metadata"
                 playsInline
                 webkit-playsinline="true"
-                style={{ 
-                  filter: 'contrast(1.1) saturate(1.2)',
-                }}
                 src={videoUrl}
                 onLoadedMetadata={handleVideoLoadedMetadata}
                 onTimeUpdate={handleVideoTimeUpdate}
@@ -736,44 +737,28 @@ export default function PreviewVideo({
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
               />
-            ) : canProceed ? (
-              /* Loading/Placeholder when steps completed but video not ready */
+            ) : isGenerating ? (
               <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                 <div className="text-center text-white space-y-4">
                   <div className="text-6xl font-light">🎬</div>
-                  <p className="text-xl">Memory Video Preview</p>
-                  <p className="text-sm opacity-75">{theme}</p>
-                  <div className="bg-blue-500/80 px-3 py-1 rounded-full text-xs font-semibold">
-                    GENERATING
-                  </div>
-                  <p className="text-xs opacity-60 max-w-md">
-                    Your video is being generated with your photos and story.
-                  </p>
                   <div className="space-y-1 text-xs opacity-75">
                     <p>📸 {uploadedImages.length} Photos</p>
                     <p>📖 {chapters.length} Chapters</p>
-                    <p>🎵 {audio.music}</p>
                   </div>
                 </div>
               </div>
-            ) : (
-              /* Dummy Preview when user navigates directly without completing steps */
+            ) : !canProceed ? (
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                 <div className="text-center text-white space-y-4">
                   <div className="text-6xl font-light">⏳</div>
-                  <p className="text-xl">Preview Not Available</p>
-                  <p className="text-sm opacity-75">Complete previous steps first</p>
-                  <div className="bg-yellow-500/80 px-3 py-1 rounded-full text-xs font-semibold">
-                    STEPS REQUIRED
-                  </div>
-                  <p className="text-xs opacity-60 max-w-md">
-                    Please complete the upload, story, script, theme, and audio steps to generate your video preview.
-                  </p>
-                  <div className="space-y-1 text-xs opacity-75">
-                    <p>📸 Upload photos first</p>
-                    <p>📖 Tell your story</p>
-                    <p>🎵 Choose audio settings</p>
-                  </div>
+                  <p className="text-xl">Complete previous steps first</p>
+                </div>
+              </div>
+            ) : (
+              <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                <div className="text-center text-white space-y-4">
+                  <div className="text-6xl font-light">🎬</div>
+                  <p className="text-xl">Loading video...</p>
                 </div>
               </div>
             )}
@@ -802,17 +787,6 @@ export default function PreviewVideo({
             <h3 className="text-lg font-semibold text-foreground mb-3">Audio & Narration</h3>
             <div className="space-y-2 text-sm text-muted-foreground">
               <p>Music: {audio.music}</p>
-              <p>Voice: {audio.voice ? `${audio.voice.display_name} (${audio.voice.locale})` : 'No voice selected'}</p>
-              {audioData && (
-                <>
-                  <p>Audio Duration: {Math.round(audioData.audio_duration)}s</p>
-                  <p>Segments: {audioData.total_segments}</p>
-                  <p>Processing Time: {Math.round(audioData.processing_time)}s</p>
-                </>
-              )}
-              {audioError && (
-                <p className="text-red-500">Audio Error: {audioError}</p>
-              )}
               <p>Subtitles: {audio.subtitles ? "Enabled" : "Disabled"}</p>
               <p>Quality: High Definition</p>
             </div>
