@@ -113,17 +113,31 @@ export default function PreviewVideo({
     try {
       console.log('🎬 PreviewVideo: Loading video URL for path:', videoPath);
       
-      // Get the authenticated video URL from the service
-      const videoUrl = videoApiService.getVideoUrl(videoPath);
-      console.log('🎬 PreviewVideo: Generated video URL:', videoUrl);
+      // Clean up previous video URL if it exists
+      if (videoUrl && videoUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(videoUrl);
+      }
+      
+      // Extract filename from path (same as VideoLibrary logic)
+      const filename = videoPath.split('/').pop() || '';
+      console.log('🎬 PreviewVideo: Extracted filename:', filename);
+      
+      if (!filename) {
+        throw new Error('Invalid video path - no filename found');
+      }
+      
+      // Create authenticated blob URL (same as VideoLibrary)
+      console.log('🎬 PreviewVideo: Creating authenticated blob for filename:', filename);
+      const blobUrl = await videoApiService.createAuthenticatedVideoBlob(filename);
+      console.log('🎬 PreviewVideo: Created blob URL:', blobUrl);
       
       // Set the video URL to trigger video display
-      setVideoUrl(videoUrl);
+      setVideoUrl(blobUrl);
       
-      console.log('✅ PreviewVideo: Video URL loaded successfully');
+      console.log('✅ PreviewVideo: Video URL set successfully, should trigger video display');
     } catch (error) {
       console.error('❌ PreviewVideo: Failed to load video URL:', error);
-      setError('Failed to load video for playback. Please try refreshing the page.');
+      setError(`Failed to load video for playback: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -377,16 +391,7 @@ export default function PreviewVideo({
         URL.revokeObjectURL(videoUrl);
       }
     };
-  }, [videoUrl]);
-
-  // Cleanup video URL on unmount
-  useEffect(() => {
-    return () => {
-      if (videoUrl) {
-        URL.revokeObjectURL(videoUrl);
-      }
-    };
-  }, [videoUrl]);
+  }, []);
 
   /**
    * Poll backend for video generation status
@@ -731,11 +736,24 @@ export default function PreviewVideo({
                 playsInline
                 webkit-playsinline="true"
                 src={videoUrl}
-                onLoadedMetadata={handleVideoLoadedMetadata}
+                onLoadedMetadata={() => {
+                  console.log('🎬 PreviewVideo: Video metadata loaded successfully');
+                  handleVideoLoadedMetadata();
+                }}
                 onTimeUpdate={handleVideoTimeUpdate}
                 onEnded={handleVideoEnded}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
+                onError={(e) => {
+                  console.error('🎬 PreviewVideo: Video element error:', e);
+                  setError('Failed to load video content');
+                }}
+                onLoadStart={() => {
+                  console.log('🎬 PreviewVideo: Video load started');
+                }}
+                onCanPlay={() => {
+                  console.log('🎬 PreviewVideo: Video can play');
+                }}
               />
             ) : isGenerating ? (
               <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
