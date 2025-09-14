@@ -111,11 +111,15 @@ export default function PreviewVideo({
    */
   const loadVideoUrl = async (videoPath: string) => {
     try {
-      const filename = videoPath.split('/').pop() || '';
-      console.log('🎬 PreviewVideo: Loading video URL for:', filename);
+      console.log('🎬 PreviewVideo: Loading video URL for path:', videoPath);
       
-      const authenticatedUrl = await videoApiService.createAuthenticatedVideoBlob(filename);
-      setVideoUrl(authenticatedUrl);
+      // Get the authenticated video URL from the service
+      const videoUrl = videoApiService.getVideoUrl(videoPath);
+      console.log('🎬 PreviewVideo: Generated video URL:', videoUrl);
+      
+      // Set the video URL to trigger video display
+      setVideoUrl(videoUrl);
+      
       console.log('✅ PreviewVideo: Video URL loaded successfully');
     } catch (error) {
       console.error('❌ PreviewVideo: Failed to load video URL:', error);

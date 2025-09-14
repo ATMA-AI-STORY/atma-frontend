@@ -165,6 +165,16 @@ export const VoiceSelectionDropdown: React.FC<VoiceSelectionDropdownProps> = ({
     return acc;
   }, {} as Record<string, Voice[]>);
 
+  // Sort languages to show English voices first
+  const sortedLanguages = Object.keys(groupedVoices).sort((a, b) => {
+    const isEnglishA = a.toLowerCase().includes('english');
+    const isEnglishB = b.toLowerCase().includes('english');
+    
+    if (isEnglishA && !isEnglishB) return -1;
+    if (!isEnglishA && isEnglishB) return 1;
+    return a.localeCompare(b);
+  });
+
   if (loading) {
     return (
       <Card className={cn("p-6 bg-white/95 backdrop-blur-sm border-0 shadow-card", className)}>
@@ -228,12 +238,12 @@ export const VoiceSelectionDropdown: React.FC<VoiceSelectionDropdownProps> = ({
           </SelectTrigger>
           
           <SelectContent className="max-h-80">
-            {Object.entries(groupedVoices).map(([language, languageVoices]) => (
+            {sortedLanguages.map((language) => (
               <div key={language}>
                 <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground border-b">
                   {language}
                 </div>
-                {languageVoices.map((voice) => (
+                {groupedVoices[language].map((voice) => (
                   <SelectItem 
                     key={voice.name} 
                     value={voice.name}

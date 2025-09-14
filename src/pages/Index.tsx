@@ -86,54 +86,15 @@ const Index = () => {
     return completedSteps.has(previousStep);
   };
 
-  // Helper function to get dummy data for components when steps aren't completed
-  const getDummyDataForStep = (step: CreationStep) => {
-    const dummyImages: ImageUploadResponse[] = [
-      { 
-        id: 'dummy-1', 
-        filename: 'family-photo.jpg',
-        original_filename: 'family-photo.jpg', 
-        file_size: 1024000,
-        mime_type: 'image/jpeg', 
-        processing_status: 'completed',
-        upload_url: '', 
-        metadata: {} 
-      },
-      { 
-        id: 'dummy-2', 
-        filename: 'vacation.jpg',
-        original_filename: 'vacation.jpg', 
-        file_size: 2048000,
-        mime_type: 'image/jpeg', 
-        processing_status: 'completed',
-        upload_url: '', 
-        metadata: {} 
-      },
-      { 
-        id: 'dummy-3', 
-        filename: 'graduation.jpg',
-        original_filename: 'graduation.jpg', 
-        file_size: 1536000,
-        mime_type: 'image/jpeg', 
-        processing_status: 'completed',
-        upload_url: '', 
-        metadata: {} 
-      }
-    ];
-
-    const dummyChapters: Chapter[] = [
-      { title: 'Chapter 1: Early Days', script: 'This is where your story begins. Share your earliest memories and formative experiences.' },
-      { title: 'Chapter 2: Growing Years', script: 'The journey continues with your growth and development through different life stages.' },
-      { title: 'Chapter 3: Life Milestones', script: 'Important achievements and milestones that shaped who you are today.' }
-    ];
-
+  // Helper function to get data for components - just return real data, let components handle empty states
+  const getDataForStep = (step: CreationStep) => {
     return {
-      uploadedImages: step === 'upload' ? videoData.uploadedImages : (!canProceedFromStep(step) ? [] : videoData.uploadedImages),
-      story: step === 'story' || !canProceedFromStep(step) ? 'Tell us about your life journey, key moments, and cherished memories...' : videoData.story,
-      chapters: step === 'script' || !canProceedFromStep(step) ? dummyChapters : videoData.chapters,
-      script: step === 'script' || !canProceedFromStep(step) ? dummyChapters.map(c => c.script).join(' ') : videoData.script,
-      theme: step === 'theme' || !canProceedFromStep(step) ? 'documentary' : videoData.theme,
-      audio: step === 'audio' || !canProceedFromStep(step) ? { music: 'cinematic-default', voice: null, subtitles: true } : videoData.audio
+      uploadedImages: videoData.uploadedImages,
+      story: videoData.story,
+      chapters: videoData.chapters,
+      script: videoData.script,
+      theme: videoData.theme,
+      audio: videoData.audio
     };
   };
 
@@ -289,13 +250,13 @@ const Index = () => {
             case 'welcome':
               return <Welcome onCreateNew={handleCreateNew} onViewPast={handleViewPast} />;
             case 'upload':
-              const uploadData = getDummyDataForStep('upload');
+              const uploadData = getDataForStep('upload');
               return <UploadPhotos onNext={handleUploadNext} onBack={handleBack} initialImages={uploadData.uploadedImages} canProceed={canProceedFromStep('upload')} />;
             case 'story':
-              const storyData = getDummyDataForStep('story');
+              const storyData = getDataForStep('story');
               return <TellStory onNext={handleStoryNext} onBack={handleBack} isLoading={isProcessingStory} initialStory={storyData.story} canProceed={canProceedFromStep('story')} />;
             case 'script':
-              const scriptData = getDummyDataForStep('script');
+              const scriptData = getDataForStep('script');
               return <ApproveScript 
                 chapters={scriptData.chapters} 
                 imageAnalysis={videoData.imageAnalysis}
@@ -309,7 +270,7 @@ const Index = () => {
             case 'audio':
               return <ChooseAudio onNext={handleAudioNext} onBack={handleBack} canProceed={canProceedFromStep('audio')} />;
             case 'preview':
-              const previewData = getDummyDataForStep('preview');
+              const previewData = getDataForStep('preview');
               return <PreviewVideo 
                 onApprove={handlePreviewApprove} 
                 onBack={handleBack} 
